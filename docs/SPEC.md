@@ -220,6 +220,9 @@ Processing order: validate → duplicate check → Weatherstack → persist.
   includes it; `InvalidInputError` → message next to each field; `DuplicatePropertyError` →
   message with a link to the existing property; `WeatherUnavailableError` → explicit
   "Weather data unavailable, property not created" message and the form keeps its values.
+- **S5.9** A request may contain at most one `createProperty` (aliases and fragments included),
+  since each one spends Weatherstack quota. More than one fails validation (`errors`, no `data`)
+  before anything runs, so no Weatherstack call is made and nothing is persisted.
 
 ### S6 — Delete property
 

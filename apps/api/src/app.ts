@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createSchema, createYoga } from 'graphql-yoga';
 import type { Context } from './context.ts';
 import { resolvers } from './resolvers/index.ts';
+import { singleCreatePropertyPlugin } from './validation/single-create-property.ts';
 
 const typeDefs = readFileSync(new URL('./schema.graphql', import.meta.url), 'utf8');
 
@@ -10,5 +11,6 @@ export function createApp(context: Context) {
   return createYoga({
     schema: createSchema<Context>({ typeDefs, resolvers }),
     context,
+    plugins: [singleCreatePropertyPlugin],
   });
 }

@@ -110,6 +110,23 @@ describe('property list', () => {
     expect(calls.map((v) => v.orderBy?.createdAt)).toEqual(['DESC', 'ASC']);
   });
 
+  it('S1.1 serves a revisited list from the cache instead of re-querying', async () => {
+    const calls: PropertiesQueryVariables[] = [];
+    server.use(
+      serveProperties([property('A', { id: 'property-1' })], calls),
+      serveProperty([detailedProperty({ id: 'property-1', street: 'A' })]),
+    );
+    const user = userEvent.setup();
+    renderRoute('/');
+
+    await user.click(await screen.findByRole('link', { name: /^A/ }));
+    await screen.findByRole('heading', { name: 'A' });
+    await user.click(screen.getByRole('link', { name: 'All properties' }));
+
+    await screen.findByRole('list', { name: 'Properties' });
+    expect(calls).toHaveLength(1);
+  });
+
   it('S5.8 includes a newly created property when returning to the list', async () => {
     const rows: Property[] = [];
     server.use(

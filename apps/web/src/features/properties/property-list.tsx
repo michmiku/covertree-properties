@@ -37,10 +37,8 @@ export function PropertyList() {
   const setDirection = (next: SortDirection) =>
     setSearchParams(writeListParams({ filter, direction: next }), { replace: true });
   const { data, error, loading, refetch } = useQuery(PropertiesQuery, {
+    // Served from the cache when revisited; create and delete invalidate it (S5.8, S6.6).
     variables: { filter: toPropertyFilter(filter), orderBy: { createdAt: direction } },
-    // The list is unmounted while a property is created, so a named refetch would miss it.
-    // Showing the cache and re-fetching on every mount keeps it current (S5.8).
-    fetchPolicy: 'cache-and-network',
   });
   const properties = data?.properties;
 

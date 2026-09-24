@@ -30,7 +30,15 @@ export function CreatePropertyForm() {
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState<PropertyFormErrors>({});
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [createProperty, { loading }] = useMutation(CreatePropertyMutation);
+  const [createProperty, { loading }] = useMutation(CreatePropertyMutation, {
+    // Every cached list (any filter or sort) may now be missing the new property, so drop them
+    // all; the list re-queries when it next mounts (S5.8). Delete does the same per record.
+    update(cache, { data }) {
+      if (data?.createProperty.__typename !== 'CreatePropertySuccess') return;
+      cache.evict({ id: 'ROOT_QUERY', fieldName: 'properties' });
+      cache.gc();
+    },
+  });
 
   const update = (field: keyof PropertyFormValues) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }));

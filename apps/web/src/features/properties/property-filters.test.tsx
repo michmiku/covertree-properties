@@ -137,6 +137,7 @@ describe('property filters', () => {
 
     expect(await screen.findByText('1 Main St')).toBeInTheDocument();
     expect(screen.getByLabelText('City')).toHaveValue('');
-    expect(calls.at(-1)?.filter).toEqual({ city: null, zipCode: null, state: null });
+    // The unfiltered list was already cached from the first load, so it isn't re-queried.
+    expect(calls.map((c) => c.filter?.city)).toEqual([null, 'Phoenix']);
   });
 });

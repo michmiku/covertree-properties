@@ -16,10 +16,20 @@ describe('readEnv', () => {
     });
   });
 
-  it('S5.7 defaults the base URL to the HTTP endpoint the free tier requires', () => {
+  it('defaults WEB_ORIGIN to the dev web app and normalizes it to an origin', () => {
+    expect(readEnv(VALID)).toMatchObject({
+      WEB_ORIGIN: 'http://localhost:5173',
+      NODE_ENV: 'development',
+    });
+    expect(readEnv({ ...VALID, WEB_ORIGIN: 'https://app.example.com/' }).WEB_ORIGIN).toBe(
+      'https://app.example.com',
+    );
+  });
+
+  it('S5.7 defaults the base URL to the HTTPS endpoint', () => {
     const withoutBaseUrl = { ...VALID, WEATHERSTACK_BASE_URL: undefined };
 
-    expect(readEnv(withoutBaseUrl).WEATHERSTACK_BASE_URL).toBe('http://api.weatherstack.com');
+    expect(readEnv(withoutBaseUrl).WEATHERSTACK_BASE_URL).toBe('https://api.weatherstack.com');
   });
 
   it('S5.7 names missing variables without echoing any values', () => {

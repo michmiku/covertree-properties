@@ -8,6 +8,9 @@ Weatherstack weather and the location's latitude/longitude with it.
 - Design decisions: [docs/adr/](docs/adr/)
 - Deferred work and proposed features: [docs/BACKLOG.md](docs/BACKLOG.md)
 - How the AI tooling was used: [AI_WORKFLOW.md](AI_WORKFLOW.md)
+- Every Claude Code session, archived: [ai/sessions/README.md](ai/sessions/README.md). To follow the
+  build, read `efe8f907` (harness) → `9a6944a8` (S5 and web scaffold) → `70daf4c1` (web screens)
+  → `63f02b26` (delivery review). The earlier short sessions are editor setup.
 
 ## Quick start (one command)
 
@@ -34,31 +37,29 @@ docker compose -f docker-compose.yml -f docker-compose.stub.yml up --build
 
 Copy `.env.example` to `.env` at the repo root. Both apps read it; `.env` is never committed.
 
-| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                                              |
-| ------------------------- | --------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                                               |
-| `WEATHERSTACK_BASE_URL`   | API       | `http://api.weatherstack.com`                                    | Keep `http://` on the free plan (see below). `http://localhost:4999` for the stub. |
-| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                                                 |
-| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs).                        |
-| `PORT`                    | API       | `4000`                                                           |                                                                                    |
-| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                                             |
+| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                        |
+| ------------------------- | --------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                         |
+| `WEATHERSTACK_BASE_URL`   | API       | `https://api.weatherstack.com`                                   | `http://localhost:4999` for the stub.                        |
+| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                           |
+| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs).  |
+| `PORT`                    | API       | `4000`                                                           |                                                              |
+| `WEB_ORIGIN`              | API       | `http://localhost:5173`                                          | Only origin allowed by CORS. Open the app on this exact URL. |
+| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                       |
 
 The API checks its variables on start and exits naming any that are missing or invalid.
-`docker compose up` only takes `WEATHERSTACK_ACCESS_KEY` from `.env`. It sets the rest itself, so
-the containers reach each other by service name.
+`docker compose up` only takes `WEATHERSTACK_ACCESS_KEY` and `WEATHERSTACK_BASE_URL` from `.env`.
+It sets the rest itself, so the containers reach each other by service name. A `localhost` base URL
+does not work inside the container; use `docker-compose.stub.yml` for the stub instead.
 
 ## Weatherstack plan
 
-The app works on Weatherstack's **free plan**, with two limits:
-
-- **HTTP only.** The free plan rejects `https://` requests (error 105), so the base URL is
-  `http://api.weatherstack.com`. The key travels in the query string over plain HTTP, so use a
-  paid plan and `https://` for anything beyond local use.
-- **About 100 calls a month.** Only `createProperty` calls Weatherstack, once per property.
-  Invalid input and duplicates are rejected before the call, so they don't use quota. Listing,
-  details and delete read from Postgres. When the quota runs out, Weatherstack answers HTTP 200
-  with `success: false`. The API reports that as `WeatherUnavailableError { reason: UPSTREAM_ERROR }`
-  and saves nothing ([ADR 0004](docs/adr/0004-weather-failure-policy.md)).
+The app works on Weatherstack's **free plan** over `https://`. The plan allows **about 100 calls a
+month**. Only `createProperty` calls Weatherstack, once per property. Invalid input and duplicates
+are rejected before the call, so they don't use quota. Listing, details and delete read from
+Postgres. When the quota runs out, Weatherstack answers HTTP 200 with `success: false`. The API
+reports that as `WeatherUnavailableError { reason: UPSTREAM_ERROR }` and saves nothing
+([ADR 0004](docs/adr/0004-weather-failure-policy.md)).
 
 Tests never call Weatherstack, so they cost no quota. For manual testing, use the stub.
 
@@ -79,6 +80,29 @@ Tests never call Weatherstack, so they cost no quota. For manual testing, use th
       │
    PostgreSQL 17  (docker compose: dev :5432, test :5433)
 ```
+
+### How `weatherData` maps Weatherstack's `current`
+
+`createProperty` asks Weatherstack for `"<zip>, <state>, USA"` with `units=f`, validates the
+response with Zod (`src/weatherstack/schema.ts`) and stores the `current` object **as returned**
+(snake_case keys, unknown keys kept) in the `weather_data` JSON column, next to `lat`/`long` parsed
+from `location`. It is never refreshed. The `Weather` resolvers rename fields on the way out:
+
+| GraphQL `Weather`                                            | Weatherstack `current`     | Note                            |
+| ------------------------------------------------------------ | -------------------------- | ------------------------------- |
+| `observationTime`                                            | `observation_time`         | UTC, e.g. `10:35 AM`            |
+| `temperature`                                                | `temperature`              | °F                              |
+| `feelsLike`                                                  | `feelslike`                | °F                              |
+| `weatherDescriptions`                                        | `weather_descriptions`     | Each entry trimmed              |
+| `weatherIcons`                                               | `weather_icons`            |                                 |
+| `windSpeed`                                                  | `wind_speed`               | mph                             |
+| `windDir`, `windDegree`                                      | `wind_dir`, `wind_degree`  |                                 |
+| `weatherCode`, `uvIndex`                                     | `weather_code`, `uv_index` | `null` when absent              |
+| `isDay`                                                      | `is_day`                   | `"yes"`/`"no"` → `true`/`false` |
+| `humidity`, `pressure`, `precip`, `cloudcover`, `visibility` | same name                  | `precip` in inches              |
+
+Fields the detail page shows are required at creation; the rest are nullable, so a missing extra
+field does not block creation. Other keys Weatherstack sends are stored but not exposed.
 
 ESLint `no-restricted-imports` enforces the layering. The generated GraphQL types are committed,
 and CI fails if they are out of date. The ADRs record the reasons: Yoga over Apollo Server, Prisma

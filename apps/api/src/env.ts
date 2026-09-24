@@ -3,10 +3,16 @@ import { loadRootEnv } from './load-env.ts';
 
 const Env = z.object({
   DATABASE_URL: z.url(),
-  // Free tier is HTTP-only (SPEC open questions), so the base URL is configurable.
-  WEATHERSTACK_BASE_URL: z.url().default('http://api.weatherstack.com'),
+  // Configurable so tests and e2e can point at MSW or the local stub.
+  WEATHERSTACK_BASE_URL: z.url().default('https://api.weatherstack.com'),
   WEATHERSTACK_ACCESS_KEY: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(4000),
+  // The only browser origin allowed to call the API (CORS). Normalized to scheme://host:port.
+  WEB_ORIGIN: z
+    .url()
+    .default('http://localhost:5173')
+    .transform((url) => new URL(url).origin),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 
 export type Env = z.infer<typeof Env>;

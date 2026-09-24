@@ -6,7 +6,10 @@ import { readEnv } from './env.ts';
 
 const env = readEnv();
 const prisma = createPrismaClient(env.DATABASE_URL);
-const app = createApp({ services: createServices(env, prisma) });
+const app = createApp(
+  { services: createServices(env, prisma) },
+  { webOrigin: env.WEB_ORIGIN, graphiql: env.NODE_ENV !== 'production' },
+);
 const server = createServer(app);
 
 server.listen(env.PORT, () => {

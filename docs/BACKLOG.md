@@ -17,10 +17,14 @@ git log (`8499d6a`..`fbd8e43`).
       this is defense in depth. Narrow or remove the two entries.
 - [ ] **Rate limiting.** S5.9 caps `createProperty` at one per request; separate requests are
       unlimited. Add per-IP limiting in front of the API (reverse proxy) before it is exposed.
+- [ ] **Query cost limiting.** Nothing bounds query size or cost: one request can alias
+      `properties` (or `property`) hundreds of times, or send a very long document, and each alias
+      runs its own database query. S5.9 only covers `createProperty`. Add limits on aliases, tokens
+      and depth (e.g. GraphQL Armor's `maxAliases`/`maxTokens`/`maxDepth`) before exposing the API.
 - [ ] **CI permissions and pinning.** Add `permissions: contents: read` to `ci.yml`; pin actions
       to commit SHAs.
-- [ ] **Production defaults.** Disable GraphiQL and introspection when `NODE_ENV=production`;
-      restrict CORS to the web origin; add nginx security headers (CSP, `nosniff`,
+- [ ] **Production defaults.** GraphiQL is off and CORS allows only `WEB_ORIGIN`; still disable
+      introspection when `NODE_ENV=production` and add nginx security headers (CSP, `nosniff`,
       `frame-ancestors`) and `gzip on`.
 - [ ] **Pin the Playwright MCP.** `.mcp.json` runs `@playwright/mcp@latest`.
 - [ ] **Integration tests lack a test-database guard.** `test/database.ts` truncates whatever
@@ -30,8 +34,8 @@ git log (`8499d6a`..`fbd8e43`).
 - [ ] **Prisma CLI in the API image.** `@prisma/client` peers on `prisma`, so the CLI, Studio,
       React and TypeScript ship in the runtime image (786 MB), including 6 `pnpm audit` findings
       that are not on the request path. Revisit on the next Prisma release.
-- [ ] **Icon URLs.** Weatherstack is plain HTTP on the free plan, so a tampered response could
-      set `weather_icons` to any URL (`<img src>`, no script execution). Optionally accept only
+- [ ] **Icon URLs.** The API stores `weather_icons` as Weatherstack returns them, so a bad or
+      compromised upstream response could set any URL (`<img src>`, no script execution). Optionally accept only
       known Weatherstack hosts over https.
 
 ### Design (fix at the right layer)

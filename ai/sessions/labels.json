@@ -1,0 +1,7 @@
+{
+  "206f30da": "Setup 1/5: project settings file fails (project dir owned by root)",
+  "931c2f0b": "Setup 2/5: diagnose the root-owned project directory",
+  "61e23043": "Setup 3/5: project settings, claude.ai connectors and skill sync off",
+  "bb00a467": "Setup 4/5: clean profile settings (~/.claude-assessment)",
+  "33a4f9b7": "Setup 5/5: MCP servers, plugins, third-party skills and licenses"
+}

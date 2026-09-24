@@ -50,6 +50,7 @@ export default defineConfig({
         PORT: String(API_PORT),
         WEATHERSTACK_BASE_URL: `http://localhost:${STUB_PORT}`,
         WEATHERSTACK_ACCESS_KEY: 'e2e-fake-key',
+        WEB_ORIGIN: `http://127.0.0.1:${WEB_PORT}`,
       },
       reuseExistingServer: false,
       gracefulShutdown: shutdown,

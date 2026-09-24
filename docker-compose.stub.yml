@@ -1,0 +1,18 @@
+# Run the Docker stack against the local Weatherstack stub (no key, no quota):
+#   docker compose -f docker-compose.yml -f docker-compose.stub.yml up --build
+services:
+  weatherstack-stub:
+    image: node:22-slim
+    working_dir: /app
+    command: node apps/web/e2e/weatherstack-stub.mjs
+    volumes:
+      - ./apps/web/e2e/weatherstack-stub.mjs:/app/apps/web/e2e/weatherstack-stub.mjs:ro
+      - ./apps/api/test/fixtures:/app/apps/api/test/fixtures:ro
+
+  api:
+    environment:
+      WEATHERSTACK_BASE_URL: http://weatherstack-stub:4999
+      WEATHERSTACK_ACCESS_KEY: stub-key
+    depends_on:
+      weatherstack-stub:
+        condition: service_started

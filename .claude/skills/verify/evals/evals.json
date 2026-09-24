@@ -1,0 +1,27 @@
+{
+  "skill_name": "verify",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "is everything green? about to open the PR",
+      "expected_output": "Postgres ensured up, pnpm verify run, UI smoke via Playwright MCP against the Weatherstack stub, report in the fixed table format.",
+      "files": [],
+      "expectations": [
+        "docker compose up -d --wait postgres postgres-test (or equivalent health check) runs before tests",
+        "pnpm run verify is executed rather than re-implementing its stages",
+        "UI smoke uses the Weatherstack stub, not the real API",
+        "Report uses the Stage/Result/Notes table and states PASS only if no stage was skipped"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "run the checks — i think typecheck is broken after i changed the schema",
+      "expected_output": "Identifies stale codegen as the likely cause, runs pnpm codegen, re-runs the gate, reports.",
+      "files": [],
+      "expectations": [
+        "Runs pnpm run codegen before diagnosing type errors further",
+        "Reports the failing stage with file:line and a likely cause"
+      ]
+    }
+  ]
+}

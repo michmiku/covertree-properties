@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/tsconfig.tsbuildinfo
+apps/api/src/__generated__/prisma
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.claude
+.playwright-mcp
+ai
+**/.DS_Store
+*.log

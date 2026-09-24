@@ -1,0 +1,81 @@
+# Ports bind to 127.0.0.1 only: the dev credentials below are not meant for the network.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: covertree
+      POSTGRES_PASSWORD: covertree
+      POSTGRES_DB: covertree
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: covertree
+      POSTGRES_PASSWORD: covertree
+      POSTGRES_DB: covertree_test
+    ports:
+      - '127.0.0.1:5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree_test']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # The app itself: `docker compose up --build` → web http://localhost:5173, API :4000/graphql.
+  # For `pnpm dev`, start only the databases: `docker compose up -d --wait postgres postgres-test`.
+  migrate:
+    build: { context: ., target: migrate }
+    environment:
+      DATABASE_URL: postgresql://covertree:covertree@postgres:5432/covertree
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: { context: ., target: api }
+    environment:
+      DATABASE_URL: postgresql://covertree:covertree@postgres:5432/covertree
+      # Read from the repo-root .env. Missing key → the API exits naming the variable.
+      WEATHERSTACK_ACCESS_KEY: ${WEATHERSTACK_ACCESS_KEY:-}
+      WEATHERSTACK_BASE_URL: http://api.weatherstack.com
+      PORT: 4000
+    ports:
+      - '127.0.0.1:4000:4000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:4000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_GRAPHQL_URL: http://localhost:4000/graphql
+    ports:
+      - '127.0.0.1:5173:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

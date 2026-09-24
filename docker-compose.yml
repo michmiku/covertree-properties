@@ -1,3 +1,4 @@
+# Ports bind to 127.0.0.1 only: the dev credentials below are not meant for the network.
 services:
   postgres:
     image: postgres:17-alpine
@@ -6,7 +7,7 @@ services:
       POSTGRES_PASSWORD: covertree
       POSTGRES_DB: covertree
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +23,7 @@ services:
       POSTGRES_PASSWORD: covertree
       POSTGRES_DB: covertree_test
     ports:
-      - '5433:5432'
+      - '127.0.0.1:5433:5432'
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
@@ -42,7 +43,7 @@ services:
       WEATHERSTACK_BASE_URL: http://api.weatherstack.com
       PORT: 4000
     ports:
-      - '4000:4000'
+      - '127.0.0.1:4000:4000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,7 +64,7 @@ services:
       args:
         VITE_GRAPHQL_URL: http://localhost:4000/graphql
     ports:
-      - '5173:80'
+      - '127.0.0.1:5173:80'
     depends_on:
       api:
         condition: service_healthy

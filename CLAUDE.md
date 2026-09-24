@@ -7,7 +7,8 @@ and session log: [AI_WORKFLOW.md](AI_WORKFLOW.md).
 
 ## Commands
 
-- `docker compose up -d` — Postgres (dev :5432, test :5433)
+- `docker compose up -d --wait postgres postgres-test` — Postgres only (dev :5432, test :5433).
+  Plain `docker compose up` also builds and starts api :4000 and web :5173.
 - `pnpm install` · `pnpm dev` — api :4000, web :5173
 - `pnpm codegen` — GraphQL types (a hook runs it when you edit a `.graphql` file)
 - `pnpm --filter api exec prisma migrate dev --name <change>` — new migration

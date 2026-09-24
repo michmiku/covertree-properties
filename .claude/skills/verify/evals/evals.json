@@ -7,7 +7,7 @@
       "expected_output": "Postgres ensured up, pnpm verify run, UI smoke via Playwright MCP against the Weatherstack stub, report in the fixed table format.",
       "files": [],
       "expectations": [
-        "docker compose up -d --wait (or equivalent health check) runs before tests",
+        "docker compose up -d --wait postgres postgres-test (or equivalent health check) runs before tests",
         "pnpm run verify is executed rather than re-implementing its stages",
         "UI smoke uses the Weatherstack stub, not the real API",
         "Report uses the Stage/Result/Notes table and states PASS only if no stage was skipped"

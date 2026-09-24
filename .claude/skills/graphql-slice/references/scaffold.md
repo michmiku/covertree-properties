@@ -59,5 +59,5 @@ apps/web/
 ## Root wiring
 
 - Root scripts already fan out with `pnpm -r --if-present`, so give each app the same script names.
-- Add a README "Run it" section once the api serves: `cp .env.example .env`, `docker compose up -d`,
+- Add a README "Run it" section once the api serves: `cp .env.example .env`, `docker compose up -d --wait postgres postgres-test`,
   `pnpm install`, `pnpm --filter api exec prisma migrate deploy`, `pnpm dev`.

@@ -13,7 +13,8 @@ steps here.
 ## 1. Database
 
 Run `docker compose ps`. If Docker itself isn't running (connection refused), tell the user to
-start OrbStack/Docker Desktop and stop there. Otherwise run `docker compose up -d --wait` so both
+start OrbStack/Docker Desktop and stop there. Otherwise run `docker compose up -d --wait postgres postgres-test` (naming the services;
+the default set also starts the api/web containers on :4000/:5173) so both
 `postgres` and `postgres-test` are healthy before tests start. If the api exists, apply migrations
 to the dev DB with `pnpm --filter api exec prisma migrate deploy`.
 

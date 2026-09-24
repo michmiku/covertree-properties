@@ -31,7 +31,7 @@ function fakeRepository(seed: PropertyRecord[] = []) {
   const rows = [...seed];
   const key = (a: { street: string; city: string; state: string; zipCode: string }) =>
     [a.street, a.city, a.state, a.zipCode].join('|');
-  const repo: PropertyRepository = {
+  const repo: Pick<PropertyRepository, 'findByAddress' | 'insert'> = {
     findByAddress: async (address) => rows.find((row) => key(row) === key(address)) ?? null,
     insert: vi.fn(async (data: NewProperty): Promise<InsertResult> => {
       const property = {

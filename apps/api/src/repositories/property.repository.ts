@@ -22,7 +22,11 @@ export interface NewProperty extends Address {
 export type InsertResult =
   { ok: true; property: PropertyRecord } | { ok: false; duplicateOf: string };
 
+export type SortDirection = 'asc' | 'desc';
+
 export interface PropertyRepository {
+  /** All properties by creation time, ties broken by id in the same direction (S2.3). */
+  list(direction: SortDirection): Promise<PropertyRecord[]>;
   findByAddress(address: Address): Promise<PropertyRecord | null>;
   /** Inserts, or reports the existing row when the address unique key is already taken. */
   insert(data: NewProperty): Promise<InsertResult>;
@@ -37,6 +41,9 @@ export function createPropertyRepository(prisma: PrismaClient): PropertyReposito
     });
 
   return {
+    list: (direction) =>
+      prisma.property.findMany({ orderBy: [{ createdAt: direction }, { id: direction }] }),
+
     findByAddress,
 
     async insert({ weatherData, ...fields }) {

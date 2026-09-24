@@ -127,7 +127,7 @@ input PropertyFilter {
 S2 — ties on createdAt are broken by id in the same direction (S2.3).
 """
 input PropertyOrderBy {
-  createdAt: SortDirection! = DESC
+  createdAt: SortDirection = DESC
 }
 
 type Query {

@@ -49,7 +49,7 @@ const Input = z.object({
 });
 
 export interface CreatePropertyDeps {
-  properties: PropertyRepository;
+  properties: Pick<PropertyRepository, 'findByAddress' | 'insert'>;
   weatherstack: WeatherstackClient;
   logger?: Pick<Console, 'warn'>;
 }

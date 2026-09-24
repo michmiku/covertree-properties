@@ -4,15 +4,19 @@ import { createServices } from '../src/container.ts';
 import { readEnv } from '../src/env.ts';
 import { createPropertyRepository } from '../src/repositories/property.repository.ts';
 import { createPropertyService } from '../src/services/create-property.service.ts';
+import { listPropertiesService } from '../src/services/list-properties.service.ts';
 import { createWeatherstackClient } from '../src/weatherstack/client.ts';
 import { resetTables, testPrisma } from './database.ts';
+import { executeOperation } from './graphql.ts';
 import { server } from './msw.ts';
 import { TEST_ACCESS_KEY, weatherstack } from './weatherstack.ts';
 
+const properties = createPropertyRepository(testPrisma);
 const app = createApp({
   services: {
+    listProperties: listPropertiesService({ properties }),
     createProperty: createPropertyService({
-      properties: createPropertyRepository(testPrisma),
+      properties,
       weatherstack: createWeatherstackClient({
         baseUrl: 'http://weatherstack.test',
         accessKey: TEST_ACCESS_KEY,
@@ -91,24 +95,11 @@ interface CreatePropertyPayload {
   reason: string;
 }
 
-interface GraphQLResponse {
-  data?: { createProperty: CreatePropertyPayload };
-  errors?: { message: string }[];
-}
-
-async function execute(
+const execute = (
   query: string,
   variables: Record<string, unknown>,
   target: ReturnType<typeof createApp> = app,
-) {
-  const response = await target.fetch('http://api.test/graphql', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const text = await response.text();
-  return { text, body: JSON.parse(text) as GraphQLResponse };
-}
+) => executeOperation<{ createProperty: CreatePropertyPayload }>(target, query, variables);
 
 const create = (input: Record<string, unknown> = INPUT) => execute(CREATE, { input });
 

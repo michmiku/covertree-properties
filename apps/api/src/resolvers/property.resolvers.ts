@@ -1,3 +1,4 @@
+import { createGraphQLError } from 'graphql-yoga';
 import type {
   Resolvers,
   ResolversTypes,
@@ -15,6 +16,19 @@ const WEATHER_MESSAGES: Record<WeatherFailureReason, string> = {
 };
 
 export const propertyResolvers: Resolvers = {
+  Query: {
+    properties(_parent, { filter, orderBy }, { services }) {
+      // TODO(S3): replace with the filter implementation. Until then, never ignore a filter silently.
+      // A blank city means no constraint (S3.4); any zipCode or state is a real filter.
+      if (filter?.city?.trim() || filter?.zipCode != null || filter?.state != null) {
+        throw createGraphQLError('Filtering properties is not supported yet.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+      return services.listProperties({ createdAt: orderBy?.createdAt ?? 'DESC' });
+    },
+  },
+
   Mutation: {
     async createProperty(_parent, { input }, { services }) {
       const result = await services.createProperty(input);

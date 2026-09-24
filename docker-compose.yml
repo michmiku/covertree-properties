@@ -11,7 +11,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree']
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U covertree -d covertree']
       interval: 2s
       timeout: 3s
       retries: 15
@@ -27,7 +27,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree_test']
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U covertree -d covertree_test']
       interval: 2s
       timeout: 3s
       retries: 15

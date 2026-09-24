@@ -85,6 +85,22 @@ describe('property filters', () => {
     expect(calls).toHaveLength(before);
   });
 
+  it('S3.4 Clear resets typed but unapplied inputs and the zip error', async () => {
+    const { user } = await setup();
+
+    await user.type(screen.getByLabelText('City'), 'abc');
+    await user.type(screen.getByLabelText('Zip code'), '123');
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(screen.getByText('Zip code must be exactly 5 digits.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(screen.getByLabelText('City')).toHaveValue('');
+    expect(screen.getByLabelText('Zip code')).toHaveValue('');
+    expect(screen.queryByText('Zip code must be exactly 5 digits.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled();
+  });
+
   it('S3.5 applies an exact zip code with Enter', async () => {
     const { user, calls } = await setup();
 

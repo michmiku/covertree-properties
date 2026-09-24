@@ -119,7 +119,13 @@ export function PropertyFilters({
         <Button
           type="button"
           variant="ghost"
-          onClick={() => onApply(NO_FILTER)}
+          onClick={() => {
+            // Also reset the inputs: with nothing applied the URL doesn't change, so the sync
+            // from `applied` wouldn't clear a typed-but-unapplied draft or its zip error.
+            setDraft(NO_FILTER);
+            setZipError(undefined);
+            onApply(NO_FILTER);
+          }}
           disabled={!isFiltering(applied) && !isFiltering(draft)}
         >
           Clear

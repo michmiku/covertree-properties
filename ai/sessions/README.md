@@ -15,3 +15,4 @@ why lives in [`AI_WORKFLOW.md`](../../AI_WORKFLOW.md) (written by `/workflow-not
 | 2026-09-23 23:58 | [build-ai-harness-covertree](2026-09-23-efe8f907-6c80-4a38-965a-0d59fdfddf37.md) | 8 | 99 | 2 | `efe8f907` |
 | 2026-09-24 09:52 | [finish-s5-slice-web-scaffold](2026-09-24-9a6944a8-8343-4087-bfe9-7653041fe6fe.md) | 26 | 276 | 3 | `9a6944a8` |
 | 2026-09-24 11:18 | [Frontend property screens and testing](2026-09-24-70daf4c1-f90d-4c87-83a3-f50089ed21a8.md) | 4 | 179 | 1 | `70daf4c1` |
+| 2026-09-24 11:57 | [Outstanding tasks review](2026-09-24-63f02b26-8b25-48f9-9f35-ce3499714545.md) | 18 | 152 | 7 | `63f02b26` |

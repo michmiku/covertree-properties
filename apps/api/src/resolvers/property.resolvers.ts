@@ -25,6 +25,8 @@ export const propertyResolvers: Resolvers = {
       }
       return result.properties;
     },
+
+    property: (_parent, { id }, { services }) => services.getProperty(id),
   },
 
   Mutation: {

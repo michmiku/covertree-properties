@@ -9,6 +9,7 @@ import type {
   PropertiesQueryVariables,
 } from '@/gql/graphql';
 import { server } from '@/test/msw';
+import { detailedProperty, serveProperty } from '@/test/properties';
 import { renderRoute } from '@/test/render';
 
 type Property = PropertiesQuery['properties'][number];
@@ -113,6 +114,7 @@ describe('property list', () => {
     const rows: Property[] = [];
     server.use(
       serveProperties(rows),
+      serveProperty([detailedProperty({ id: 'new-id', street: '15528 E Golden Eagle Blvd' })]),
       graphql.mutation<CreatePropertyMutation, CreatePropertyMutationVariables>(
         'CreateProperty',
         ({ variables }) => {
@@ -140,9 +142,10 @@ describe('property list', () => {
     await user.selectOptions(screen.getByLabelText('State'), 'AZ');
     await user.type(screen.getByLabelText('Zip code'), '85268');
     await user.click(screen.getByRole('button', { name: 'Create property' }));
-    await screen.findByText('new-id');
+    await screen.findByRole('heading', { name: '15528 E Golden Eagle Blvd' });
     await user.click(screen.getByRole('link', { name: 'Covertree properties' }));
 
-    expect(await screen.findByText('15528 E Golden Eagle Blvd')).toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Properties' });
+    expect(within(list).getByText('15528 E Golden Eagle Blvd')).toBeInTheDocument();
   });
 });

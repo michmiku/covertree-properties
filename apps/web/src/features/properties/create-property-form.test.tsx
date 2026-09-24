@@ -4,6 +4,7 @@ import { delay, graphql, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import type { CreatePropertyMutation, CreatePropertyMutationVariables } from '@/gql/graphql';
 import { server } from '@/test/msw';
+import { detailedProperty, serveProperty } from '@/test/properties';
 import { renderRoute } from '@/test/render';
 
 type Result = CreatePropertyMutation['createProperty'];
@@ -77,12 +78,17 @@ describe('S5.8 create property form', () => {
 
   it('S5.8 sends the input and navigates to the new property on success', async () => {
     const calls: CreatePropertyMutationVariables[] = [];
-    server.use(respondWith(SUCCESS, calls));
+    server.use(
+      respondWith(SUCCESS, calls),
+      serveProperty([detailedProperty({ id: 'new-id', street: '15528 E Golden Eagle Blvd' })]),
+    );
     const { submit } = await fillForm();
 
     await submit();
 
-    expect(await screen.findByText('new-id')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: '15528 E Golden Eagle Blvd' }),
+    ).toBeInTheDocument();
     expect(calls).toEqual([
       {
         input: {

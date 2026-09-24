@@ -1,12 +1,8 @@
 import { useParams } from 'react-router';
+import { PropertyDetails } from '@/features/properties/property-details';
 
-/** Details (address, coordinates, weather) land here with S4. */
 export function PropertyRoute() {
-  const { id } = useParams();
-  return (
-    <section className="grid gap-2">
-      <h1 className="font-heading text-2xl font-semibold">Property</h1>
-      <p className="font-mono text-sm text-muted-foreground">{id}</p>
-    </section>
-  );
+  const { id = '' } = useParams();
+  // Keyed so navigating between properties never shows the previous one's state.
+  return <PropertyDetails key={id} id={id} />;
 }

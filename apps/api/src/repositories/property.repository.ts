@@ -39,6 +39,8 @@ export interface ListOptions {
 export interface PropertyRepository {
   /** Properties by creation time, ties broken by id in the same direction (S2.3). */
   list(options: ListOptions): Promise<PropertyRecord[]>;
+  /** `id` must already be a well-formed UUID (Postgres rejects anything else). */
+  findById(id: string): Promise<PropertyRecord | null>;
   findByAddress(address: Address): Promise<PropertyRecord | null>;
   /** Inserts, or reports the existing row when the address unique key is already taken. */
   insert(data: NewProperty): Promise<InsertResult>;
@@ -69,6 +71,8 @@ export function createPropertyRepository(prisma: PrismaClient): PropertyReposito
         },
         orderBy: [{ createdAt: direction }, { id: direction }],
       }),
+
+    findById: (id) => prisma.property.findUnique({ where: { id } }),
 
     findByAddress,
 

@@ -4,6 +4,7 @@ import { createServices } from '../src/container.ts';
 import { readEnv } from '../src/env.ts';
 import { resetTables, seedProperty, testPrisma } from './database.ts';
 import { executeOperation } from './graphql.ts';
+import { recordOutboundRequests } from './msw.ts';
 
 // Production wiring (container.ts), so S1.3 also covers what server.ts builds.
 const app = createApp({ services: createServices(readEnv(), testPrisma) });
@@ -97,12 +98,13 @@ describe('properties query (GraphQL → Postgres)', () => {
   });
 
   it('S1.3 makes no Weatherstack request while listing', async () => {
-    // No MSW handler is registered: any outbound request would fail this test (onUnhandledRequest).
+    const outbound = recordOutboundRequests();
     await seedProperty();
 
     const { body } = await list();
 
     expect(body.data?.properties).toHaveLength(1);
+    expect(outbound).toEqual([]);
   });
 
   describe('sorting by creation date', () => {

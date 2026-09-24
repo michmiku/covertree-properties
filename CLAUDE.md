@@ -23,8 +23,9 @@ pnpm 12: there is no `pnpm -s`; use `pnpm run <script>` / `pnpm exec <bin>`.
 - **Layering:** resolver → service → repository. Resolvers map GraphQL ⇄ service calls and
   errors; services hold the logic and never import GraphQL; repositories are the only Prisma
   users. ESLint `no-restricted-imports` enforces this. Fix the design, don't disable the rule.
-- **Weatherstack** is called only from the create-property service. The client is built once and
-  injected through the Yoga context, never imported by resolvers. Parse its response with Zod:
+- **Weatherstack** is called only from the create-property service. The client is built once in
+  `src/container.ts` and injected into that service only; the Yoga context carries services, never
+  the client. Parse its response with Zod:
   HTTP 200 can still be `{ success: false }`, and `lat`/`lon` are strings (SPEC S5.5).
 - **Schema is the contract:** edit `apps/api/src/schema.graphql` first. Never hand-edit generated
   files (`__generated__/`, `src/gql/`) or duplicate generated types.

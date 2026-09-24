@@ -71,8 +71,8 @@ Tests never call Weatherstack, so they cost no quota. For manual testing, use th
    resolvers      map GraphQL ⇄ service calls; domain results → union types (…Success | …Error)
       │
    services       validation (Zod for what SDL can't express), business rules; no GraphQL imports
-      │    └──────────────▶ Weatherstack client  (create-property service only; injected via context,
-      │                      response parsed with Zod)                ──▶ api.weatherstack.com
+      │    └──────────────▶ Weatherstack client  (built once in container.ts, injected into the
+      │                      create-property service only; Zod-parsed)  ──▶ api.weatherstack.com
    repositories   the only Prisma users
       │
    PostgreSQL 17  (docker compose: dev :5432, test :5433)

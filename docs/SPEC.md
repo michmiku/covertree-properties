@@ -245,8 +245,9 @@ type PropertyNotFoundError {
 
 ### Cross-cutting (X)
 
-- **X1** Layering: resolver → service → repository. The Weatherstack client is injected through
-  the GraphQL context and used only by the create-property service (lint-enforced). Services
+- **X1** Layering: resolver → service → repository. The Weatherstack client is built once
+  (`src/container.ts`) and injected into the create-property service only; the GraphQL context
+  carries services, never the client, so resolvers can't reach it (lint-enforced). Services
   return domain results; resolvers map them to the union types.
 - **X2** Tests never reach the real Weatherstack (MSW `onUnhandledRequest: 'error'`, fake key).
   Every `WeatherFailureReason` has at least one test.

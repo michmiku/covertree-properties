@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "ok let's start building — do S5 (create property with the weatherstack call). nothing is scaffolded yet",
-      "expected_output": "apps/api scaffolded with MSW test harness; createProperty implemented schema-first through repository/service/resolver with Weatherstack injected via context; tests named after S5.x criteria incl. every WeatherFailureReason; reviewer agent run.",
+      "expected_output": "apps/api scaffolded with MSW test harness; createProperty implemented schema-first through repository/service/resolver with the Weatherstack client injected into the create-property service only; tests named after S5.x criteria incl. every WeatherFailureReason; reviewer agent run.",
       "files": [],
       "expectations": [
         "schema.graphql defines createProperty(input): CreatePropertyResult union with USState enum and zipCode validation expressed per SPEC",

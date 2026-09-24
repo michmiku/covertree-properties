@@ -44,6 +44,8 @@ export interface PropertyRepository {
   findByAddress(address: Address): Promise<PropertyRecord | null>;
   /** Inserts, or reports the existing row when the address unique key is already taken. */
   insert(data: NewProperty): Promise<InsertResult>;
+  /** Returns whether a row was removed; `id` must already be a well-formed UUID. */
+  deleteById(id: string): Promise<boolean>;
 }
 
 const UNIQUE_VIOLATION = 'P2002';
@@ -94,5 +96,8 @@ export function createPropertyRepository(prisma: PrismaClient): PropertyReposito
         throw error;
       }
     },
+
+    // deleteMany reports a count instead of throwing when the row is already gone (S6.3).
+    deleteById: async (id) => (await prisma.property.deleteMany({ where: { id } })).count > 0,
   };
 }

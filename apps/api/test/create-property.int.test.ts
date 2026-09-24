@@ -4,6 +4,7 @@ import { createServices } from '../src/container.ts';
 import { readEnv } from '../src/env.ts';
 import { createPropertyRepository } from '../src/repositories/property.repository.ts';
 import { createPropertyService } from '../src/services/create-property.service.ts';
+import { deletePropertyService } from '../src/services/delete-property.service.ts';
 import { getPropertyService } from '../src/services/get-property.service.ts';
 import { listPropertiesService } from '../src/services/list-properties.service.ts';
 import { createWeatherstackClient } from '../src/weatherstack/client.ts';
@@ -17,6 +18,7 @@ const app = createApp({
   services: {
     listProperties: listPropertiesService({ properties }),
     getProperty: getPropertyService({ properties }),
+    deleteProperty: deletePropertyService({ properties }),
     createProperty: createPropertyService({
       properties,
       weatherstack: createWeatherstackClient({

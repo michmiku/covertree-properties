@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PropertyQuery as PropertyResult } from '@/gql/graphql';
+import { DeletePropertyButton } from './delete-property-button';
 import { PropertyQuery } from './property.query';
 
 type Property = NonNullable<PropertyResult['property']>;
@@ -96,6 +97,7 @@ function PropertyPanel({ property }: { property: Property }) {
             </div>
           </dl>
         </div>
+        <DeletePropertyButton id={property.id} address={`${property.street}, ${location}`} />
       </header>
 
       <section

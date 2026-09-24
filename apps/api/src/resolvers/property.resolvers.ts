@@ -55,6 +55,13 @@ export const propertyResolvers: Resolvers = {
           };
       }
     },
+
+    async deleteProperty(_parent, { id }, { services }) {
+      const result = await services.deleteProperty(id);
+      return result.kind === 'deleted'
+        ? { __typename: 'DeletePropertySuccess', id: result.id }
+        : { __typename: 'PropertyNotFoundError', message: 'Property not found.', id: result.id };
+    },
   },
 
   Property: {

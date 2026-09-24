@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { deletePropertyService } from './delete-property.service.ts';
 import { getPropertyService } from './get-property.service.ts';
 
 const ID = '3f1c2a4e-9b7d-4c1e-8a2f-0d6b5e4c3a21';
@@ -20,5 +21,23 @@ describe('property id handling', () => {
     await getPropertyService({ properties: { findById } })(ID.toUpperCase());
 
     expect(findById).toHaveBeenCalledWith(ID.toUpperCase());
+  });
+
+  it('S6.2 reports notFound for a malformed id without touching the repository', async () => {
+    const deleteById = vi.fn();
+
+    expect(await deletePropertyService({ properties: { deleteById } })('nope')).toEqual({
+      kind: 'notFound',
+      id: 'nope',
+    });
+    expect(deleteById).not.toHaveBeenCalled();
+  });
+
+  it('S6.1 / S6.2 maps the repository outcome to deleted or notFound', async () => {
+    const deleteById = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const remove = deletePropertyService({ properties: { deleteById } });
+
+    expect(await remove(ID)).toEqual({ kind: 'deleted', id: ID });
+    expect(await remove(ID)).toEqual({ kind: 'notFound', id: ID });
   });
 });

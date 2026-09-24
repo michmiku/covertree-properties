@@ -2,6 +2,7 @@ import type { PrismaClient } from './__generated__/prisma/client.ts';
 import type { Env } from './env.ts';
 import { createPropertyRepository } from './repositories/property.repository.ts';
 import { createPropertyService } from './services/create-property.service.ts';
+import { deletePropertyService } from './services/delete-property.service.ts';
 import { getPropertyService } from './services/get-property.service.ts';
 import { listPropertiesService } from './services/list-properties.service.ts';
 import type { Services } from './services/index.ts';
@@ -21,6 +22,7 @@ export function createServices(env: WeatherstackEnv, prisma: PrismaClient): Serv
   });
   return {
     createProperty: createPropertyService({ properties, weatherstack }),
+    deleteProperty: deletePropertyService({ properties }),
     getProperty: getPropertyService({ properties }),
     listProperties: listPropertiesService({ properties }),
   };

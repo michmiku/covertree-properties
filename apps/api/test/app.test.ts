@@ -6,6 +6,7 @@ describe('api app', () => {
     const app = createApp({
       services: {
         createProperty: vi.fn(),
+        deleteProperty: vi.fn(),
         getProperty: vi.fn(),
         listProperties: vi.fn(),
       },

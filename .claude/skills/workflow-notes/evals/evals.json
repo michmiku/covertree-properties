@@ -1,0 +1,28 @@
+{
+  "skill_name": "workflow-notes",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're done for today, log this session before i quit",
+      "expected_output": "One entry appended to AI_WORKFLOW.md Session log following the template, linked to ai/sessions/<date>-<id>.md from current-session.mjs, including corrections.",
+      "files": [],
+      "expectations": [
+        "Ran scripts/current-session.mjs to get the session id",
+        "Exactly one new entry under '## Session log' in AI_WORKFLOW.md",
+        "Entry links ai/sessions/<date>-<sessionId>.md",
+        "Entry has a non-empty 'Corrections & surprises' section grounded in the conversation",
+        "No files under ai/sessions/ were modified"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "update the workflow notes again, we did a bit more after the last write-up",
+      "expected_output": "Updates the existing entry for the same session id instead of appending a duplicate.",
+      "files": [],
+      "expectations": [
+        "No duplicate entry for the same session id",
+        "The existing entry now reflects the additional work"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "covertree-properties",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present dev",
+    "codegen": "pnpm -r --if-present codegen",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "test:unit": "pnpm test:scripts && pnpm -r --if-present test:unit",
+    "test": "pnpm test:scripts && pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build",
+    "e2e": "pnpm -r --if-present e2e",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.8",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1"
+  }
+}

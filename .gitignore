@@ -1,1 +1,10 @@
 .DS_Store
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+*.log
+ai/sessions/.archive.log

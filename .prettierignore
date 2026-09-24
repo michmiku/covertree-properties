@@ -1,0 +1,12 @@
+pnpm-lock.yaml
+node_modules
+dist
+coverage
+playwright-report
+test-results
+**/__generated__/**
+**/src/gql/**
+ai/sessions/**
+.claude/skills/architecture/**
+.claude/skills/write-spec/**
+.claude/skills/LICENSE-knowledge-work-plugins

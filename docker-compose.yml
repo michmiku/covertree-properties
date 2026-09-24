@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: covertree
+      POSTGRES_PASSWORD: covertree
+      POSTGRES_DB: covertree
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: covertree
+      POSTGRES_PASSWORD: covertree
+      POSTGRES_DB: covertree_test
+    ports:
+      - '5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U covertree -d covertree_test']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:

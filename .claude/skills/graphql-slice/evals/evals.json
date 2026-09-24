@@ -1,0 +1,41 @@
+{
+  "skill_name": "graphql-slice",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "ok let's start building — do S5 (create property with the weatherstack call). nothing is scaffolded yet",
+      "expected_output": "apps/api scaffolded with MSW test harness; createProperty implemented schema-first through repository/service/resolver with Weatherstack injected via context; tests named after S5.x criteria incl. success:false/timeout/malformed; reviewer agent run.",
+      "files": [],
+      "expectations": [
+        "schema.graphql defines createProperty(input) with USState enum and zipCode validation expressed per SPEC",
+        "Vitest setup uses MSW with onUnhandledRequest: 'error' and a fake WEATHERSTACK_ACCESS_KEY",
+        "Weatherstack client is imported only by the create-property service or context wiring, never by resolvers",
+        "There is a test for HTTP 200 with success:false that asserts nothing was persisted (S5.4)",
+        "Input validation happens before the Weatherstack call and a test proves no request is made on invalid input (S5.3)",
+        "The reviewer agent was invoked with S5"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "add the filtering by city/zip/state to the list, api and ui",
+      "expected_output": "S3 implemented: PropertyFilter input, case-insensitive city match, combined with sort, UI filter controls with no-matches state; tests per S3.x.",
+      "files": [],
+      "expectations": [
+        "Repository uses mode: 'insensitive' (or equivalent) for city",
+        "Tests exist named with S3.2, S3.4 and S3.5",
+        "Web uses a generated TypedDocumentNode rather than a hand-written result type",
+        "UI renders an empty/no-matches state with a clear-filters action"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "next story pls — S6 delete. also i think deleting should just silently succeed if the id doesnt exist, simpler",
+      "expected_output": "Skill notices the request conflicts with SPEC S6.2 (NOT_FOUND error) and asks the user before deviating; if confirmed, updates SPEC in the same slice.",
+      "files": [],
+      "expectations": [
+        "The response points out that SPEC S6.2 requires a NOT_FOUND error",
+        "The AI asks for confirmation (or updates docs/SPEC.md) instead of silently implementing a different behavior"
+      ]
+    }
+  ]
+}

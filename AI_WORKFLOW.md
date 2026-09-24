@@ -38,8 +38,8 @@ It's kept short on purpose, and every rule in it that can be enforced is enforce
 
 ### Enforcement in code
 
-- **Layering:** `eslint.config.mjs` `no-restricted-imports` per layer (resolvers ↛ Prisma/repositories/Weatherstack; services ↛ GraphQL/Prisma; repositories ↛ services/resolvers).
-- **No real Weatherstack in tests:** MSW `onUnhandledRequest: 'error'` + a fake key in the Vitest setup, and a local stub for e2e (scaffolded by the first `/graphql-slice`).
+- **Layering:** `eslint.config.mjs` `no-restricted-imports` per layer (resolvers ↛ Prisma/repositories/Weatherstack; services ↛ GraphQL/Prisma, and ↛ Weatherstack except the create-property service; repositories ↛ services/resolvers).
+- **No real Weatherstack in tests:** MSW `onUnhandledRequest: 'error'` + a fake key in the Vitest setup; "no request" tests also record outbound requests and assert none. E2E (`apps/web/playwright.config.ts`) starts its own stub, API and web on separate ports against postgres-test.
 - **Same gate everywhere:** `pnpm verify` runs locally, in `/verify`, and in [CI](.github/workflows/ci.yml).
 
 ### Permissions (`.claude/settings.json`)
@@ -110,3 +110,34 @@ Session: [`efe8f907`](ai/sessions/2026-09-23-efe8f907-6c80-4a38-965a-0d59fdfddf3
 - "Is a custom skill better as a CLAUDE.md rule or maybe a hook?" — led to the design rule at the top of this file.
 
 **Harness changes:** Everything listed above in Harness was created this session.
+
+### 2026-09-24 · S4 details, S6 delete, X4 e2e, README, URL state and toasts
+
+Session: [`70daf4c1`](ai/sessions/2026-09-24-70daf4c1-f90d-4c87-83a3-f50089ed21a8.md) · Stories: S4, S6, X1, X3, X4, P1
+
+**Goal:** Check the web screens (list, detail, create, delete) and fill any gaps, run `/verify`, walk the app with the Playwright MCP, then finish the remaining spec stories.
+
+**What the AI did:**
+
+- Audited first. The detail and delete screens the user believed were "mostly added" did not exist: `routes/property.tsx` was a placeholder and the API had no `property`/`deleteProperty` resolvers (SDL only). There was also no Playwright setup, so `pnpm e2e` ran nothing and `verify` passed without e2e.
+- Built S4 and S6 with `/graphql-slice` as vertical slices: repository `findById`/`deleteById`, services with a UUID guard (malformed id → `null` / `PropertyNotFoundError`), union mapping in resolvers, a detail view with a weather snapshot section, and a shadcn AlertDialog for delete.
+- Added X4 e2e (happy and `success:false` paths) and a README (X3). `pnpm dev` now runs `prisma migrate deploy` so the app starts in 3 commands.
+- Follow-up request: list filters and sort kept in the URL (they survive reload; the detail page returns to the same filtered list), toasts on create and delete (Sonner), and labelled coordinates.
+- Browser walk via Playwright MCP against the stub: duplicate create, create, filters (`"  HILLS "`, `85A68`, `Fo%`), sort, detail, delete, not-found, 390px width. The AI deleted only its own test rows and left the user's dev data unchanged.
+- 7 commits, one per story or concern. Mixed files were split by rebuilding each commit's tree from a snapshot with a script, and each stage was checked with format, lint, typecheck and tests.
+
+**Corrections & surprises:**
+
+- The two e2e "hangs" were real bugs, not slowness. (1) Vite bound only `::1`, so Playwright's IPv4 readiness check waited forever. (2) Playwright couldn't exit because `pnpm exec` (pnpm 12 native) starts children in a new process group that Playwright's teardown doesn't kill. Fix: `exec node_modules/.bin/...` plus a graceful SIGTERM. Piping through `tail` also hid progress, which made the first run look stuck.
+- E2e logs showed two Apollo "cache data may be lost" warnings (`Weather` without an id; `Query.properties` shrinking after delete). Fixed with type policies in `apps/web/src/apollo.ts`.
+- The reviewer agent returned DONE (13/13 PASS) plus 6 non-blocking findings, and all were fixed. The most useful one: "no Weatherstack request" tests relied on `onUnhandledRequest`, which a swallowed `fetch` would pass. Tests now assert zero recorded requests, confirmed by temporarily injecting a swallowed call. It also found that services other than create-property could import the Weatherstack client without a lint error.
+- shadcn CLI prompted to overwrite `button.tsx`; declined. Its Sonner wrapper imported `next-themes` although the app has no theme provider, so the dependency was removed.
+- A web test failed once when run as part of the final `verify`. The AI's first diagnosis (a late async toast) was wrong, and its first fix made the test fail every time. Reading Sonner's source showed the store replays active toasts to a new `<Toaster>`; the fix is `toast.dismiss()` in the test `afterEach`. It was folded into the toasts commit (branch not pushed).
+- No shadcn skill was installed although the user asked for one; shadcn docs came through context7 instead.
+
+**Prompts worth noting:**
+
+- "Those were mostly added in the previous session, so confirm if there is anything missing" — the audit found this was not the case, so the session built S4 and S6 instead of polishing them.
+- "like the filter sort persisting between reloads" — led to an e2e check that reloads a real browser, not only unit tests of the URL helpers.
+
+**Harness changes:** ESLint now restricts Weatherstack imports to the create-property service; Playwright config and e2e stub added (`apps/web/e2e/`); the Enforcement section above was updated to match. No skill, hook, agent or CLAUDE.md changes.

@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client/react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PropertyQuery as PropertyResult } from '@/gql/graphql';
 import { DeletePropertyButton } from './delete-property-button';
+import { listPath } from './list-search-params';
 import { PropertyQuery } from './property.query';
 
 type Property = NonNullable<PropertyResult['property']>;
@@ -67,6 +68,7 @@ export function PropertyDetails({ id }: { id: string }) {
 }
 
 function PropertyPanel({ property }: { property: Property }) {
+  const backTo = listPath(useLocation().state);
   const { weatherData: weather } = property;
   const location = `${property.city}, ${property.state} ${property.zipCode}`;
   const description = weather.weatherDescriptions.join(', ');
@@ -75,7 +77,7 @@ function PropertyPanel({ property }: { property: Property }) {
   return (
     <article className="grid gap-6">
       <Link
-        to="/"
+        to={backTo}
         className="inline-flex items-center gap-1 justify-self-start text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
@@ -97,7 +99,11 @@ function PropertyPanel({ property }: { property: Property }) {
             </div>
           </dl>
         </div>
-        <DeletePropertyButton id={property.id} address={`${property.street}, ${location}`} />
+        <DeletePropertyButton
+          id={property.id}
+          address={`${property.street}, ${location}`}
+          returnTo={backTo}
+        />
       </header>
 
       <section

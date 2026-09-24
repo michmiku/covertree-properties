@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Link } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { ArrowDownUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SortDirection, type PropertiesQuery as PropertiesResult } from '@/gql/graphql';
+import { readListParams, writeListParams, type ListLocationState } from './list-search-params';
 import { PropertiesQuery } from './properties.query';
 import {
   isFiltering,
@@ -27,10 +27,14 @@ const createdAtFormat = new Intl.DateTimeFormat('en-US', {
   timeStyle: 'short',
 });
 
-/** S1 list with the S2 sort toggle and S3 filters. */
+/** S1 list with the S2 sort toggle and S3 filters, both kept in the URL. */
 export function PropertyList() {
-  const [direction, setDirection] = useState<SortDirection>(SortDirection.DESC);
-  const [filter, setFilter] = useState<FilterValues>(NO_FILTER);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { filter, direction } = readListParams(searchParams);
+  const setFilter = (next: FilterValues) =>
+    setSearchParams(writeListParams({ filter: next, direction }));
+  const setDirection = (next: SortDirection) =>
+    setSearchParams(writeListParams({ filter, direction: next }), { replace: true });
   const { data, error, loading, refetch } = useQuery(PropertiesQuery, {
     variables: { filter: toPropertyFilter(filter), orderBy: { createdAt: direction } },
     // The list is unmounted while a property is created, so a named refetch would miss it.
@@ -47,7 +51,7 @@ export function PropertyList() {
           variant="outline"
           size="sm"
           onClick={() =>
-            setDirection((d) => (d === SortDirection.DESC ? SortDirection.ASC : SortDirection.DESC))
+            setDirection(direction === SortDirection.DESC ? SortDirection.ASC : SortDirection.DESC)
           }
           aria-label={`Sorted by creation date: ${SORT_LABEL[direction]}. Change order`}
         >
@@ -112,11 +116,13 @@ export function PropertyList() {
 }
 
 function PropertyRow({ property }: { property: Property }) {
+  const { search } = useLocation();
   const description = property.weatherData.weatherDescriptions.join(', ');
   const icon = property.weatherData.weatherIcons[0];
   return (
     <Link
       to={`/properties/${property.id}`}
+      state={{ listSearch: search } satisfies ListLocationState}
       className="block rounded-xl ring-1 ring-foreground/10 transition-colors hover:bg-muted/50 focus-visible:outline-2"
     >
       <div className="flex items-center justify-between gap-4 p-4">

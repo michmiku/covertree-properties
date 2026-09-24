@@ -42,6 +42,15 @@ test('X4 happy path: create → appears in list → filter → detail → delete
   await filters(page).getByRole('button', { name: 'Apply' }).click();
   await expect(list.getByRole('link', { name: new RegExp(address.street) })).toBeVisible();
 
+  // Filters and sort persist in the URL across a reload (SPEC P1).
+  await page.getByRole('button', { name: /Newest first/ }).click();
+  await expect(page).toHaveURL('/?city=hills&zip=85268&state=AZ&sort=oldest');
+  await page.reload();
+  await expect(filters(page).getByLabel('City')).toHaveValue('hills');
+  await expect(filters(page).getByLabel('State')).toHaveValue('AZ');
+  await expect(page.getByRole('button', { name: /Oldest first/ })).toBeVisible();
+  await expect(list.getByRole('link', { name: new RegExp(address.street) })).toBeVisible();
+
   await filters(page).getByLabel('City').fill('Nowhere');
   await filters(page).getByRole('button', { name: 'Apply' }).click();
   await expect(page.getByText('No properties match these filters')).toBeVisible();
@@ -54,7 +63,8 @@ test('X4 happy path: create → appears in list → filter → detail → delete
   await expect(dialog).toContainText(address.street);
   await dialog.getByRole('button', { name: 'Delete property' }).click();
 
-  await expect(page).toHaveURL('/');
+  // Back on the list it came from: filters were cleared, the sort was kept.
+  await expect(page).toHaveURL('/?sort=oldest');
   await expect(page.getByRole('link', { name: new RegExp(address.street) })).toHaveCount(0);
   await page.goto(detailUrl);
   await expect(page.getByText('Property not found')).toBeVisible();

@@ -93,6 +93,19 @@ describe('delete property', () => {
     expect(await screen.findByText('Property not found')).toBeInTheDocument();
   });
 
+  it('S6.6 returns to the filtered list the property was opened from', async () => {
+    server.use(...serveBackend([detailedProperty()]));
+    const { router } = renderRoute('/?state=AZ');
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('link', { name: /15528 E Golden Eagle Blvd/ }));
+
+    const { dialog } = await openDeleteDialog();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete property' }));
+
+    expect(await screen.findByText('No properties match these filters')).toBeInTheDocument();
+    expect(router.state.location.search).toBe('?state=AZ');
+  });
+
   it('S6.6 treats an already-deleted property as gone and returns to the list', async () => {
     const rows = [detailedProperty()];
     server.use(...serveBackend(rows));

@@ -148,4 +148,67 @@ describe('property list', () => {
     const list = await screen.findByRole('list', { name: 'Properties' });
     expect(within(list).getByText('15528 E Golden Eagle Blvd')).toBeInTheDocument();
   });
+
+  it('restores filters and sort from the URL and queries with them', async () => {
+    const calls: PropertiesQueryVariables[] = [];
+    server.use(serveProperties([property('1 Main St')], calls));
+
+    renderRoute('/?city=hills&zip=85268&state=AZ&sort=oldest');
+
+    await screen.findByText('1 Main St');
+    expect(calls.at(-1)).toEqual({
+      filter: { city: 'hills', zipCode: '85268', state: 'AZ' },
+      orderBy: { createdAt: 'ASC' },
+    });
+    expect(screen.getByLabelText('City')).toHaveValue('hills');
+    expect(screen.getByLabelText('Zip code')).toHaveValue('85268');
+    expect(screen.getByLabelText('State')).toHaveValue('AZ');
+    expect(screen.getByRole('button', { name: /Oldest first/ })).toBeInTheDocument();
+  });
+
+  it('ignores an invalid zip or state in the URL instead of failing the query', async () => {
+    const calls: PropertiesQueryVariables[] = [];
+    server.use(serveProperties([property('1 Main St')], calls));
+
+    renderRoute('/?zip=85A68&state=XX&sort=sideways');
+
+    await screen.findByText('1 Main St');
+    expect(calls.at(-1)).toEqual({
+      filter: { city: null, zipCode: null, state: null },
+      orderBy: { createdAt: 'DESC' },
+    });
+  });
+
+  it('writes applied filters and the sort to the URL', async () => {
+    server.use(serveProperties([property('1 Main St')]));
+    const user = userEvent.setup();
+    const { router } = renderRoute('/');
+    await screen.findByText('1 Main St');
+
+    await user.type(screen.getByLabelText('City'), ' Hills ');
+    await user.selectOptions(screen.getByLabelText('State'), 'AZ');
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    await user.click(screen.getByRole('button', { name: /Newest first/ }));
+
+    expect(router.state.location.search).toBe('?city=Hills&state=AZ&sort=oldest');
+
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(router.state.location.search).toBe('?sort=oldest');
+  });
+
+  it('returns from a property to the same filtered list', async () => {
+    server.use(
+      serveProperties([property('1 Main St', { id: 'property-1' })]),
+      serveProperty([detailedProperty({ street: '1 Main St' })]),
+    );
+    const user = userEvent.setup();
+    const { router } = renderRoute('/?city=hills');
+
+    await user.click(await screen.findByRole('link', { name: /1 Main St/ }));
+    await user.click(await screen.findByRole('link', { name: 'All properties' }));
+
+    expect(router.state.location.search).toBe('?city=hills');
+    expect(await screen.findByLabelText('City')).toHaveValue('hills');
+  });
 });

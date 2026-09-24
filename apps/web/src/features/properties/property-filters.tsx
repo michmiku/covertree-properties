@@ -24,6 +24,9 @@ export function toPropertyFilter({ city, zipCode, state }: FilterValues): Proper
   };
 }
 
+const sameFilter = (a: FilterValues, b: FilterValues) =>
+  a.city === b.city && a.zipCode === b.zipCode && a.state === b.state;
+
 export const isFiltering = (values: FilterValues) =>
   Object.values(toPropertyFilter(values)).some((value) => value !== null);
 
@@ -39,8 +42,9 @@ export function PropertyFilters({
   const [zipError, setZipError] = useState<string>();
   const [prevApplied, setPrevApplied] = useState(applied);
 
-  // Keep the inputs in sync when filters are cleared from outside (e.g. the "no matches" state).
-  if (applied !== prevApplied) {
+  // Keep the inputs in sync when filters change from outside: the "no matches" clear button, or
+  // the URL (back/forward). Compared by value, since `applied` is re-read from the URL each render.
+  if (!sameFilter(applied, prevApplied)) {
     setPrevApplied(applied);
     setDraft(applied);
     setZipError(undefined);

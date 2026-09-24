@@ -17,8 +17,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeletePropertyMutation } from './delete-property.mutation';
 
-/** S6.6 — confirm, delete, then return to the list. */
-export function DeletePropertyButton({ id, address }: { id: string; address: string }) {
+/** S6.6 — confirm, delete, then return to the list the user came from. */
+export function DeletePropertyButton({
+  id,
+  address,
+  returnTo,
+}: {
+  id: string;
+  address: string;
+  returnTo: string;
+}) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
@@ -38,7 +46,7 @@ export function DeletePropertyButton({ id, address }: { id: string; address: str
       // DeletePropertySuccess and PropertyNotFoundError both mean the property no longer exists.
       setOpen(false);
       toast.success('Property deleted', { description: address });
-      await navigate('/');
+      await navigate(returnTo);
     } catch {
       setError('Could not reach the server. The property was not deleted.');
     }

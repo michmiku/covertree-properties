@@ -84,3 +84,6 @@ Work in this order. Each step compiles against the previous one.
   before), which wastes quota.
 - `lat`/`lon` stored as strings; parse them to numbers.
 - The resolver importing the Weatherstack client "just this once" is a lint error by design.
+- `throw new GraphQLError(...)` from `graphql` gets masked to `INTERNAL_SERVER_ERROR` (graphql 17
+  wraps it via `cause`, and Yoga 5 doesn't unwrap that). Use `createGraphQLError` from `graphql-yoga`
+  for `BAD_USER_INPUT`, and assert `extensions.code` in a test.

@@ -11,6 +11,7 @@ and session log: [AI_WORKFLOW.md](AI_WORKFLOW.md).
   Plain `docker compose up` also builds and starts api :4000 and web :5173.
 - `pnpm install` · `pnpm dev` — api :4000, web :5173
 - `pnpm codegen` — GraphQL types (a hook runs it when you edit a `.graphql` file)
+- `pnpm codegen:check` — generated GraphQL types are committed; CI fails on drift
 - `pnpm --filter api exec prisma migrate dev --name <change>` — new migration
 - `pnpm test` · `pnpm test:unit` · `pnpm e2e`
 - `pnpm verify` — format check, lint, typecheck, all tests, build, e2e. Must pass before commit.

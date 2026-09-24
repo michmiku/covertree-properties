@@ -8,6 +8,6 @@ test-results/
 .env.local
 *.log
 ai/sessions/.archive.log
-**/__generated__/
-**/src/gql/
+# GraphQL codegen output is committed (CI checks it for drift); the Prisma client is not.
+apps/api/src/__generated__/prisma/
 .playwright-mcp/

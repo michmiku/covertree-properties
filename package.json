@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
     "codegen": "pnpm -r --if-present codegen",
+    "codegen:check": "node scripts/check-codegen.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",

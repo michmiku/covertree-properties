@@ -9,12 +9,37 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Same values as .env.example; CI never has a real Weatherstack key (tests use MSW / a stub).
+env:
+  TEST_DATABASE_URL: postgresql://covertree:covertree@localhost:5433/covertree_test
+  DATABASE_URL: postgresql://covertree:covertree@localhost:5433/covertree_test
+  WEATHERSTACK_BASE_URL: http://localhost:4999
+  WEATHERSTACK_ACCESS_KEY: ci-fake-key
+  VITE_GRAPHQL_URL: http://localhost:4000/graphql
+
 jobs:
-  verify:
+  lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run format:check
+      - run: pnpm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
-      postgres-test:
+      postgres-test: &postgres-test
         image: postgres:17-alpine
         env:
           POSTGRES_USER: covertree
@@ -24,28 +49,48 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U covertree -d covertree_test"
           --health-interval 2s --health-timeout 3s --health-retries 15
-    env:
-      # Same values as .env.example; CI never has a real Weatherstack key (tests use MSW / a stub).
-      TEST_DATABASE_URL: postgresql://covertree:covertree@localhost:5433/covertree_test
-      DATABASE_URL: postgresql://covertree:covertree@localhost:5433/covertree_test
-      WEATHERSTACK_BASE_URL: http://localhost:4999
-      WEATHERSTACK_ACCESS_KEY: ci-fake-key
-      VITE_GRAPHQL_URL: http://localhost:4000/graphql
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Install Playwright browser
-        if: hashFiles('apps/web/playwright.config.ts') != ''
-        run: pnpm --filter web exec playwright install --with-deps chromium
-      - run: pnpm run verify
+      - uses: ./.github/actions/setup
+      - run: pnpm run test
+
+  codegen:
+    name: codegen drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres-test: *postgres-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: GraphQL types match schema.graphql and the web documents
+        run: pnpm run codegen:check
+      - name: Prisma migrations match schema.prisma
+        run: pnpm --filter api run db:drift
+
+  e2e:
+    name: build + e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres-test: *postgres-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run build
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm run e2e
       - name: Upload Playwright report
         if: failure() && hashFiles('apps/web/playwright-report/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/web/playwright-report
+
+  docker:
+    name: docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build

@@ -7,8 +7,8 @@ description: Run the full quality gate for the property app (Postgres up, `pnpm 
 
 The Stop hook already typechecks and unit-tests after every turn. This skill is the **full** gate:
 the checks that need Docker, a build, or a browser, plus judgment about what a failure means.
-`pnpm verify` is the single source of truth, and CI runs the same script, so don't reimplement its
-steps here.
+`pnpm verify` is the single source of truth, and CI runs the same stages as separate jobs (plus a
+codegen drift check and a Docker build), so don't reimplement its steps here.
 
 ## 1. Database
 

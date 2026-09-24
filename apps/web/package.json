@@ -10,7 +10,8 @@
     "codegen": "graphql-codegen",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "postinstall": "graphql-codegen"
+    "postinstall": "graphql-codegen",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@apollo/client": "^4.3.1",
@@ -31,6 +32,7 @@
     "@graphql-codegen/cli": "^7.4.2",
     "@graphql-codegen/client-preset": "^6.2.0",
     "@graphql-typed-document-node/core": "^3.2.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

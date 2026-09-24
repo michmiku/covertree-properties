@@ -17,13 +17,26 @@ COPY . .
 # postinstall runs `prisma generate` (the Prisma client is not committed).
 RUN pnpm install --offline --frozen-lockfile
 
-FROM deps AS api
-RUN pnpm --filter api build
+# One-shot migrations (compose `migrate` service). Needs the Prisma CLI, a dev dependency.
+FROM deps AS migrate
 WORKDIR /app/apps/api
+USER node
+CMD ["node_modules/.bin/prisma", "migrate", "deploy"]
+
+# Production dependencies only; `dist` already contains the compiled Prisma client.
+FROM deps AS api-build
+RUN pnpm --filter api build \
+  && pnpm --filter api deploy --prod --ignore-scripts /out
+
+FROM node:22-slim AS api
 ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=api-build /out/package.json ./
+COPY --from=api-build /out/node_modules ./node_modules
+COPY --from=api-build /app/apps/api/dist ./dist
+USER node
 EXPOSE 4000
-# Dev dependencies stay installed: the Prisma CLI applies migrations on start.
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && exec node dist/server.js"]
+CMD ["node", "dist/server.js"]
 
 FROM deps AS web-build
 # Inlined at build time; the browser calls the API directly.

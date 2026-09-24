@@ -18,8 +18,9 @@ cp .env.example .env   # set WEATHERSTACK_ACCESS_KEY
 docker compose up --build
 ```
 
-Open http://localhost:5173 (API: http://localhost:4000/graphql). The API applies migrations on
-start.
+Open http://localhost:5173 (API: http://localhost:4000/graphql). A one-shot `migrate` service
+applies migrations before the API starts; the API image itself is production-only and runs as a
+non-root user.
 
 No key, or want to save quota? Use the local Weatherstack stub. It always returns the same
 Fountain Hills, AZ weather:

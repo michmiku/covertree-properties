@@ -34,6 +34,14 @@ services:
 
   # The app itself: `docker compose up --build` → web http://localhost:5173, API :4000/graphql.
   # For `pnpm dev`, start only the databases: `docker compose up -d --wait postgres postgres-test`.
+  migrate:
+    build: { context: ., target: migrate }
+    environment:
+      DATABASE_URL: postgresql://covertree:covertree@postgres:5432/covertree
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build: { context: ., target: api }
     environment:
@@ -45,8 +53,8 @@ services:
     ports:
       - '127.0.0.1:4000:4000'
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD

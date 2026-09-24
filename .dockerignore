@@ -5,9 +5,9 @@
 **/test-results
 **/tsconfig.tsbuildinfo
 apps/api/src/__generated__/prisma
-.env
-.env.*
-!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 .git
 .github
 .claude

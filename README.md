@@ -8,6 +8,9 @@ Weatherstack weather and the location's latitude/longitude with it.
 - Design decisions: [docs/adr/](docs/adr/)
 - Deferred work and proposed features: [docs/BACKLOG.md](docs/BACKLOG.md)
 - How the AI tooling was used: [AI_WORKFLOW.md](AI_WORKFLOW.md)
+- Every Claude Code session, archived: [ai/sessions/README.md](ai/sessions/README.md). To follow the
+  build, read `efe8f907` (harness) → `9a6944a8` (S5 and web scaffold) → `70daf4c1` (web screens)
+  → `63f02b26` (delivery review). The earlier short sessions are editor setup.
 
 ## Quick start (one command)
 
@@ -77,6 +80,29 @@ Tests never call Weatherstack, so they cost no quota. For manual testing, use th
       │
    PostgreSQL 17  (docker compose: dev :5432, test :5433)
 ```
+
+### How `weatherData` maps Weatherstack's `current`
+
+`createProperty` asks Weatherstack for `"<zip>, <state>, USA"` with `units=f`, validates the
+response with Zod (`src/weatherstack/schema.ts`) and stores the `current` object **as returned**
+(snake_case keys, unknown keys kept) in the `weather_data` JSON column, next to `lat`/`long` parsed
+from `location`. It is never refreshed. The `Weather` resolvers rename fields on the way out:
+
+| GraphQL `Weather`                                            | Weatherstack `current`     | Note                            |
+| ------------------------------------------------------------ | -------------------------- | ------------------------------- |
+| `observationTime`                                            | `observation_time`         | UTC, e.g. `10:35 AM`            |
+| `temperature`                                                | `temperature`              | °F                              |
+| `feelsLike`                                                  | `feelslike`                | °F                              |
+| `weatherDescriptions`                                        | `weather_descriptions`     | Each entry trimmed              |
+| `weatherIcons`                                               | `weather_icons`            |                                 |
+| `windSpeed`                                                  | `wind_speed`               | mph                             |
+| `windDir`, `windDegree`                                      | `wind_dir`, `wind_degree`  |                                 |
+| `weatherCode`, `uvIndex`                                     | `weather_code`, `uv_index` | `null` when absent              |
+| `isDay`                                                      | `is_day`                   | `"yes"`/`"no"` → `true`/`false` |
+| `humidity`, `pressure`, `precip`, `cloudcover`, `visibility` | same name                  | `precip` in inches              |
+
+Fields the detail page shows are required at creation; the rest are nullable, so a missing extra
+field does not block creation. Other keys Weatherstack sends are stored but not exposed.
 
 ESLint `no-restricted-imports` enforces the layering. The generated GraphQL types are committed,
 and CI fails if they are out of date. The ADRs record the reasons: Yoga over Apollo Server, Prisma

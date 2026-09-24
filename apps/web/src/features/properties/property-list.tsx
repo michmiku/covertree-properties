@@ -4,6 +4,7 @@ import { ArrowDownUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SortDirection, type PropertiesQuery as PropertiesResult } from '@/gql/graphql';
 import { readListParams, writeListParams, type ListLocationState } from './list-search-params';
 import { PropertiesQuery } from './properties.query';
@@ -78,9 +79,7 @@ export function PropertyList() {
           </AlertDescription>
         </Alert>
       ) : !properties && loading ? (
-        <p className="text-muted-foreground" role="status">
-          Loading properties…
-        </p>
+        <PropertyListSkeleton />
       ) : properties?.length === 0 && isFiltering(filter) ? (
         <Card>
           <CardContent className="grid justify-items-center gap-2 py-8 text-center">
@@ -112,6 +111,29 @@ export function PropertyList() {
         </ul>
       )}
     </section>
+  );
+}
+
+function PropertyListSkeleton() {
+  return (
+    <div className="grid gap-3" role="status" aria-label="Loading properties">
+      {[0, 1, 2].map((row) => (
+        <div
+          key={row}
+          className="flex items-center justify-between gap-4 rounded-xl p-4 ring-1 ring-foreground/10"
+        >
+          <div className="grid gap-1.5">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-36" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-8" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

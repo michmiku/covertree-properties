@@ -83,7 +83,7 @@ describe('property list', () => {
     const user = userEvent.setup();
     renderRoute('/');
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading properties…');
+    expect(screen.getByRole('status', { name: 'Loading properties' })).toBeInTheDocument();
     expect(await screen.findByText('Could not load properties')).toBeInTheDocument();
 
     server.use(serveProperties([property('1 Main St')]));

@@ -40,7 +40,7 @@ It's kept short on purpose, and every rule in it that can be enforced is enforce
 
 - **Layering:** `eslint.config.mjs` `no-restricted-imports` per layer (resolvers ↛ Prisma/repositories/Weatherstack; services ↛ GraphQL/Prisma, and ↛ Weatherstack except the create-property service; repositories ↛ services/resolvers).
 - **No real Weatherstack in tests:** MSW `onUnhandledRequest: 'error'` + a fake key in the Vitest setup; "no request" tests also record outbound requests and assert none. E2E (`apps/web/playwright.config.ts`) starts its own stub, API and web on separate ports against postgres-test.
-- **Same gate everywhere:** `pnpm verify` runs locally, in `/verify`, and in [CI](.github/workflows/ci.yml).
+- **Same gate everywhere:** `pnpm verify` runs locally and in `/verify`. [CI](.github/workflows/ci.yml) runs the same stages as separate jobs (lint, typecheck, test, build + e2e), plus a codegen drift job (committed GraphQL types regenerated and diffed via `pnpm codegen:check`; Prisma migrations vs `schema.prisma` via `db:drift`) and a Docker image build.
 
 ### Permissions (`.claude/settings.json`)
 
@@ -74,7 +74,8 @@ the harness was agreed.
 
 - **Files:** `ai/sessions/<YYYY-MM-DD>-<session-id>.md` (readable) and `ai/sessions/raw/<date>-<id>[.<agentId>].jsonl` (redacted raw, main + subagents). The date is the UTC date of the first entry.
 - **Rendered:** user prompts (including feedback given when rejecting a plan, and answers to questions), assistant replies, tool calls with inputs, and tool outputs truncated to 40 lines / 4 KB. System reminders and metadata are stripped.
-- **Redacted in both files:** emails, `access_key=` query params, `*KEY/SECRET/TOKEN/PASSWORD=` values, bearer tokens, API keys, connection-string credentials, account/organization IDs, and absolute home paths. After writing, the files are re-scanned, and any match fails the run and is logged to `ai/sessions/.archive.log`.
+- **Redacted in both files:** the exact values of secret-named `.env` variables (plain, URL-encoded and JSON-escaped), emails, `access_key=`/`%3D` query params, `*KEY/SECRET/TOKEN/PASSWORD` values written as `=`, `:`, quoted, JSON or YAML, camelCase `accessKey`-style fields, bearer tokens, API keys, connection-string credentials, account/organization IDs, and absolute home paths.
+- **Fails closed:** everything is scanned in memory before anything is written. On any match nothing is archived; the leak kind (never an `.env` value) is logged to `ai/sessions/.archive.log`.
 - **Tests:** `scripts/__tests__/archive-session.test.mjs` (`pnpm run test:scripts`).
 
 ## Session log
@@ -141,3 +142,33 @@ Session: [`70daf4c1`](ai/sessions/2026-09-24-70daf4c1-f90d-4c87-83a3-f50089ed21a
 - "like the filter sort persisting between reloads" — led to an e2e check that reloads a real browser, not only unit tests of the URL helpers.
 
 **Harness changes:** ESLint now restricts Weatherstack imports to the create-property service; Playwright config and e2e stub added (`apps/web/e2e/`); the Enforcement section above was updated to match. No skill, hook, agent or CLAUDE.md changes.
+
+### 2026-09-24 · Delivery review, Docker/CI, review fixes, PR #1
+
+Session: [`63f02b26`](ai/sessions/2026-09-24-63f02b26-8b25-48f9-9f35-ce3499714545.md) · Stories: P1, X1, X3, S5.9 (new), plus fixes in S3.4, S5.4, S5.8, S6.6, S7.3
+
+**Goal:** Close what was outstanding (list skeleton, Docker Compose for all services, split CI with a codegen drift check, README), review the whole app, apply the chosen fixes, and open the PR.
+
+**What the AI did:**
+
+- Audited against git log and SPEC first; found the list skeleton was the only open P1 item and built it.
+- Added a root `Dockerfile` (api/web targets), api + web in `docker-compose.yml`, `docker-compose.stub.yml` for a key-less stack, and split CI into lint / typecheck / test / codegen drift / build + e2e / docker jobs. Generated GraphQL types are now committed so `pnpm codegen:check` can diff them; `db:drift` checks migrations. Both checks were shown to fail on real drift. README rewritten (one-command start, env table, Weatherstack plan, architecture sketch).
+- Ran the reviewer (44/44 PASS), a security review, `/code-review` and `/simplify` report-only, verified the top two findings by hand, and presented one deduplicated, numbered list. The user picked 9 items; each landed as its own commit with a test that fails without the fix where possible: archiver fails closed and redacts exact `.env` values, Clear bug, localhost-only ports, S5.9 one-`createProperty`-per-request rule, slim non-root API image with a `migrate` service, list cache invalidation on create, and reviewer test gaps.
+- Wrote `docs/BACKLOG.md` (deferred findings + proposed features, starting with F1 maps as a proposal only), committed the re-archived session logs, pushed `main` and the branch, opened PR #1; all 6 CI jobs passed on the first run.
+
+**Corrections & surprises:**
+
+- `/security-review` couldn't start: it diffs against `origin/HEAD` and the remote was empty. The same review ran in an agent against `main` instead of faking a remote ref.
+- Several of the AI's own slips, caught before commit: the first negative drift test stashed the edit before running the check; `codegen:check` first compared against HEAD and flagged staged files; a stray `tsc -b` left `tsconfig.tsbuildinfo`; a smoke-test log was redirected outside the repo. All redone or cleaned up.
+- The first fail-closed test was wrong (an exact `.env` value is redacted, so it never reaches the leak check). Investigating it exposed a real gap: secrets containing `"` or `\` appear JSON-escaped in `.jsonl` and were missed by both redaction and the check. Fixed.
+- pnpm 12 `deploy --offline` fails its supply-chain policy check; dropped `--offline`. The API image is still 786 MB because `@prisma/client` peers on the Prisma CLI; recorded in the backlog, not hidden.
+- The user's `pnpm dev` held :4000 and their dev DB already had the PDF address, so browser smoke tests ran on other ports with a different street and deleted only their own row.
+- The push was rejected (token lacked the `workflow` scope); the user ran `gh auth refresh -s workflow`.
+
+**Prompts worth noting:**
+
+- "When everything is done, list the findings, and I'll decide which to apply, if any." — kept every review report-only, including `/simplify`, which normally applies its fixes.
+- "…let's verify that there is a Docker Compose for Postgres, API, and web. GitHub Actions for: lint, type check, test, codegen drift check" — answered with a gap table first; the one real design choice (commit generated types to make drift checkable) went back to the user.
+- "The rest can wait for now, since there are no breaking item reported" — led to `docs/BACKLOG.md` instead of findings living only in this transcript.
+
+**Harness changes:** CLAUDE.md (database-only compose command, `pnpm codegen:check`, X1 wording, backlog link); `/verify` skill and eval (database-only compose command, CI description); `graphql-slice` scaffold note and eval wording; CI split into jobs with a shared setup action; archiver redaction widened and made fail-closed. The Enforcement and archiving sections above were updated to match.

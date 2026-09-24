@@ -29,6 +29,17 @@ const onlyWeatherstackFetches = {
   },
 };
 
+const servicePatterns = [
+  {
+    group: ['graphql', 'graphql-yoga', '**/resolvers/**'],
+    message: 'Services are transport-agnostic: no GraphQL imports.',
+  },
+  {
+    group: ['@prisma/client', '**/__generated__/prisma/**'],
+    message: 'Services access data through repositories, not Prisma directly.',
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -67,19 +78,21 @@ export default tseslint.config(
       },
     ],
   ),
-  layer(
-    ['apps/api/src/services/**'],
-    [
-      {
-        group: ['graphql', 'graphql-yoga', '**/resolvers/**'],
-        message: 'Services are transport-agnostic: no GraphQL imports.',
-      },
-      {
-        group: ['@prisma/client', '**/__generated__/prisma/**'],
-        message: 'Services access data through repositories, not Prisma directly.',
-      },
-    ],
-  ),
+  layer(['apps/api/src/services/create-property.service*.ts'], servicePatterns),
+  {
+    ...layer(
+      ['apps/api/src/services/**'],
+      [
+        ...servicePatterns,
+        {
+          group: ['**/weatherstack/**'],
+          message:
+            'Only the create-property service may use Weatherstack (SPEC goal 2: never on reads or deletes).',
+        },
+      ],
+    ),
+    ignores: ['apps/api/src/services/create-property.service*.ts'],
+  },
   layer(
     ['apps/api/src/repositories/**'],
     [

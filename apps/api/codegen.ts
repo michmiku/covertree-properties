@@ -13,6 +13,7 @@ const config: CodegenConfig = {
         mapperTypeSuffix: 'Model',
         mappers: {
           Property: './prisma/client.ts#Property',
+          Weather: '../weatherstack/schema.ts#WeatherstackCurrent',
         },
         scalars: {
           DateTime: { input: 'Date', output: 'Date | string' },

@@ -12,7 +12,8 @@ const Env = z.object({
 export type Env = z.infer<typeof Env>;
 
 export function readEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  loadRootEnv();
+  // Only the real process env is backed by the repo-root .env; explicit sources (tests) stay pure.
+  if (source === process.env) loadRootEnv();
   const parsed = Env.safeParse(source);
   if (!parsed.success) {
     // Report variable names only; values may be secrets (SPEC S5.2).

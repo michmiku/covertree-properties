@@ -1,11 +1,12 @@
 import { createServer } from 'node:http';
 import { createApp } from './app.ts';
+import { createServices } from './container.ts';
 import { createPrismaClient } from './db.ts';
 import { readEnv } from './env.ts';
 
 const env = readEnv();
 const prisma = createPrismaClient(env.DATABASE_URL);
-const app = createApp({ services: {} });
+const app = createApp({ services: createServices(env, prisma) });
 const server = createServer(app);
 
 server.listen(env.PORT, () => {

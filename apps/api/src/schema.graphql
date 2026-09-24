@@ -93,7 +93,7 @@ Weatherstack `current` object (Fahrenheit, mph, inches). Fields S4.4 shows are n
 are nullable so an absent optional field does not block creation.
 """
 type Weather {
-  "Local observation time as reported, e.g. `02:14 PM`."
+  "Observation time in UTC as reported by Weatherstack, e.g. `10:35 AM`."
   observationTime: String!
   temperature: Float!
   feelsLike: Float!
@@ -180,7 +180,7 @@ enum WeatherFailureReason {
   UPSTREAM_ERROR
   "Body failed schema validation, incl. unparsable or out-of-range lat/lon."
   INVALID_RESPONSE
-  "Resolved country is not allowed for the input state (S5.6)."
+  "Resolved country is not the USA (S5.6)."
   LOCATION_MISMATCH
 }
 

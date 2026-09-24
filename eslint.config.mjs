@@ -5,13 +5,20 @@ import tseslint from 'typescript-eslint';
 
 /**
  * Architecture rules (see CLAUDE.md "Layering"): resolver -> service -> repository.
- * The Weatherstack client reaches services only through the GraphQL context.
+ * The Weatherstack client is built once in src/container.ts and injected into the create-property
+ * service; the GraphQL context only carries services, so resolvers can't reach the client.
  */
 const layer = (files, patterns) => ({
   files,
+  rules: { 'no-restricted-imports': ['error', { patterns }] },
+});
+
+// A raw fetch would bypass the import rules (e.g. calling Weatherstack from a resolver), so only
+// the Weatherstack client may use it.
+const onlyWeatherstackFetches = {
+  files: ['apps/api/src/**/*.ts'],
+  ignores: ['apps/api/src/weatherstack/client.ts', '**/*.test.ts'],
   rules: {
-    'no-restricted-imports': ['error', { patterns }],
-    // A raw fetch would bypass the import rules above (e.g. calling Weatherstack from a resolver).
     'no-restricted-globals': [
       'error',
       {
@@ -20,7 +27,7 @@ const layer = (files, patterns) => ({
       },
     ],
   },
-});
+};
 
 export default tseslint.config(
   {
@@ -32,6 +39,7 @@ export default tseslint.config(
       '**/src/gql/**',
       'playwright-report/**',
       'test-results/**',
+      '.playwright-mcp/**',
       'ai/sessions/**',
     ],
   },
@@ -44,6 +52,7 @@ export default tseslint.config(
     files: ['apps/web/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
   },
+  onlyWeatherstackFetches,
   layer(
     ['apps/api/src/resolvers/**'],
     [
@@ -54,7 +63,7 @@ export default tseslint.config(
       {
         group: ['**/weatherstack/**'],
         message:
-          'Resolvers must not use the Weatherstack client; it is injected into services via context.',
+          'Resolvers must not use the Weatherstack client; src/container.ts injects it into the create-property service.',
       },
     ],
   ),

@@ -4,5 +4,5 @@
     "types": ["node"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src", "test", "prisma.config.ts", "codegen.ts", "vitest.config.ts"]
+  "include": ["src", "test", "scripts", "prisma.config.ts", "codegen.ts", "vitest.config.ts"]
 }

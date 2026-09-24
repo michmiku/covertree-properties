@@ -41,7 +41,7 @@ enter by hand. A property without that data is incomplete, so it must never be s
 | Default sort           | `createdAt DESC` (newest first); ties broken by `id` in the same direction so order is stable.                                                                        |
 | Filter semantics       | All filter fields optional; omitted, `null` or blank-after-trim = no constraint; provided fields are AND-ed.                                                          |
 | City filter            | **Contains**, case-insensitive, after trimming; `%` and `_` are literal characters, not wildcards.                                                                    |
-| Zip filter             | **Exact** match; value must be exactly 5 digits or the query is rejected.                                                                                             |
+| Zip filter             | **Exact** match; blank = any, otherwise exactly 5 digits or the query is rejected.                                                                                    |
 | State filter           | Single `USState` enum value, exact match.                                                                                                                             |
 | Allowed states         | `enum USState`: 50 states + `DC` + territories `PR`, `GU`, `VI`, `AS`, `MP` (56 values).                                                                              |
 | Zip validation         | `^\d{5}$` (ZIP+4 and other formats rejected).                                                                                                                         |
@@ -112,10 +112,10 @@ enter by hand. A property without that data is incomplete, so it must never be s
 - **S3.2** `city` matches as a case-insensitive **substring** after trimming: `fountain`,
   `HILLS` and `Fountain Hills` all match `Fountain Hills`.
 - **S3.3** `%` and `_` in the city filter are matched literally (`Fo%` does not match `Fountain Hills`).
-- **S3.4** A `city` filter that is empty or whitespace-only applies no city constraint.
+- **S3.4** A `city` or `zipCode` filter that is empty or whitespace-only applies no constraint.
 - **S3.5** `zipCode` matches exactly: `85268` matches only `85268`, `8526` is not a prefix match.
-- **S3.6** `zipCode` that is not exactly 5 digits (`85A68`, `8526`, `852681`) is rejected with a
-  GraphQL error `BAD_USER_INPUT`, not an empty list.
+- **S3.6** A non-blank `zipCode` that is not exactly 5 digits after trimming (`85A68`, `8526`,
+  `852681`) is rejected with a GraphQL error `BAD_USER_INPUT`, not an empty list.
 - **S3.7** `state` matches the enum value exactly; a value outside `USState` is rejected by
   GraphQL validation.
 - **S3.8** Filter and sort combine: S2 ordering applies to the filtered set.

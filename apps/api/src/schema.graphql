@@ -118,7 +118,7 @@ S3 — all fields optional; provided fields are AND-ed. Omitted, null or blank =
 input PropertyFilter {
   "Case-insensitive substring; `%` and `_` match literally (S3.2–S3.4)."
   city: String
-  "Exact match; must be exactly 5 digits or the query fails with BAD_USER_INPUT (S3.5, S3.6)."
+  "Exact match. Blank = any (S3.4); otherwise exactly 5 digits or BAD_USER_INPUT (S3.5, S3.6)."
   zipCode: String
   state: USState
 }

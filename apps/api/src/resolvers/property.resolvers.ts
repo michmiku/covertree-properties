@@ -17,15 +17,13 @@ const WEATHER_MESSAGES: Record<WeatherFailureReason, string> = {
 
 export const propertyResolvers: Resolvers = {
   Query: {
-    properties(_parent, { filter, orderBy }, { services }) {
-      // TODO(S3): replace with the filter implementation. Until then, never ignore a filter silently.
-      // A blank city means no constraint (S3.4); any zipCode or state is a real filter.
-      if (filter?.city?.trim() || filter?.zipCode != null || filter?.state != null) {
-        throw createGraphQLError('Filtering properties is not supported yet.', {
-          extensions: { code: 'BAD_USER_INPUT' },
-        });
+    async properties(_parent, { filter, orderBy }, { services }) {
+      const result = await services.listProperties({ createdAt: orderBy?.createdAt, filter });
+      if (result.kind === 'invalidFilter') {
+        // S3.6 — a bad filter is an error, never an empty list.
+        throw createGraphQLError(result.message, { extensions: { code: 'BAD_USER_INPUT' } });
       }
-      return services.listProperties({ createdAt: orderBy?.createdAt ?? 'DESC' });
+      return result.properties;
     },
   },
 

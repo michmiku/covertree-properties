@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SortDirection, type PropertiesQuery as PropertiesResult } from '@/gql/graphql';
 import { PropertiesQuery } from './properties.query';
+import {
+  isFiltering,
+  NO_FILTER,
+  PropertyFilters,
+  toPropertyFilter,
+  type FilterValues,
+} from './property-filters';
 
 type Property = PropertiesResult['properties'][number];
 
@@ -20,11 +27,12 @@ const createdAtFormat = new Intl.DateTimeFormat('en-US', {
   timeStyle: 'short',
 });
 
-/** S1 list with the S2 sort toggle. */
+/** S1 list with the S2 sort toggle and S3 filters. */
 export function PropertyList() {
   const [direction, setDirection] = useState<SortDirection>(SortDirection.DESC);
+  const [filter, setFilter] = useState<FilterValues>(NO_FILTER);
   const { data, error, loading, refetch } = useQuery(PropertiesQuery, {
-    variables: { orderBy: { createdAt: direction } },
+    variables: { filter: toPropertyFilter(filter), orderBy: { createdAt: direction } },
     // The list is unmounted while a property is created, so a named refetch would miss it.
     // Showing the cache and re-fetching on every mount keeps it current (S5.8).
     fetchPolicy: 'cache-and-network',
@@ -48,6 +56,8 @@ export function PropertyList() {
         </Button>
       </div>
 
+      <PropertyFilters applied={filter} onApply={setFilter} />
+
       {error && !properties ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load properties</AlertTitle>
@@ -67,6 +77,15 @@ export function PropertyList() {
         <p className="text-muted-foreground" role="status">
           Loading properties…
         </p>
+      ) : properties?.length === 0 && isFiltering(filter) ? (
+        <Card>
+          <CardContent className="grid justify-items-center gap-2 py-8 text-center">
+            <p className="font-medium">No properties match these filters</p>
+            <Button variant="outline" size="sm" onClick={() => setFilter(NO_FILTER)}>
+              Clear filters
+            </Button>
+          </CardContent>
+        </Card>
       ) : properties?.length === 0 ? (
         <Card>
           <CardContent className="grid gap-2 py-8 text-center">

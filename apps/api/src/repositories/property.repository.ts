@@ -24,15 +24,33 @@ export type InsertResult =
 
 export type SortDirection = 'asc' | 'desc';
 
+/** Already validated and normalized by the service; absent fields apply no constraint. */
+export interface PropertyFilter {
+  city?: string;
+  zipCode?: string;
+  state?: USState;
+}
+
+export interface ListOptions {
+  direction: SortDirection;
+  filter?: PropertyFilter;
+}
+
 export interface PropertyRepository {
-  /** All properties by creation time, ties broken by id in the same direction (S2.3). */
-  list(direction: SortDirection): Promise<PropertyRecord[]>;
+  /** Properties by creation time, ties broken by id in the same direction (S2.3). */
+  list(options: ListOptions): Promise<PropertyRecord[]>;
   findByAddress(address: Address): Promise<PropertyRecord | null>;
   /** Inserts, or reports the existing row when the address unique key is already taken. */
   insert(data: NewProperty): Promise<InsertResult>;
 }
 
 const UNIQUE_VIOLATION = 'P2002';
+
+/**
+ * Prisma's `contains` passes the value into ILIKE unescaped, so `%` and `_` would act as
+ * wildcards. Escape them (and the escape character itself) to match literally (S3.3).
+ */
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
 export function createPropertyRepository(prisma: PrismaClient): PropertyRepository {
   const findByAddress = ({ street, city, state, zipCode }: Address) =>
@@ -41,8 +59,16 @@ export function createPropertyRepository(prisma: PrismaClient): PropertyReposito
     });
 
   return {
-    list: (direction) =>
-      prisma.property.findMany({ orderBy: [{ createdAt: direction }, { id: direction }] }),
+    list: ({ direction, filter = {} }) =>
+      prisma.property.findMany({
+        where: {
+          // S3.2 case-insensitive substring.
+          ...(filter.city && { city: { contains: escapeLike(filter.city), mode: 'insensitive' } }),
+          ...(filter.zipCode && { zipCode: filter.zipCode }),
+          ...(filter.state && { state: filter.state }),
+        },
+        orderBy: [{ createdAt: direction }, { id: direction }],
+      }),
 
     findByAddress,
 

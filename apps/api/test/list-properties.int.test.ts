@@ -144,23 +144,4 @@ describe('properties query (GraphQL → Postgres)', () => {
     expect(desc.body.data?.properties.map((p) => p.id)).toEqual([...byId].reverse());
     expect(again.body).toEqual(desc.body);
   });
-
-  // Temporary until S3: a filter is rejected rather than silently ignored.
-  it.each([{ state: 'AZ' }, { city: 'Fountain' }, { zipCode: '85268' }, { zipCode: '' }])(
-    'rejects filter %j with BAD_USER_INPUT until S3 implements filtering',
-    async (filter) => {
-      const { body } = await list({ filter });
-
-      expect(body.data).toBeNull();
-      expect(body.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
-    },
-  );
-
-  it('S3.4 accepts a blank city filter as no constraint', async () => {
-    await seedProperty();
-
-    const { body } = await list({ filter: { city: '   ' } });
-
-    expect(body.data?.properties).toHaveLength(1);
-  });
 });

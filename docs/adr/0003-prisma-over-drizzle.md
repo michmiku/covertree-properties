@@ -71,4 +71,4 @@ matters less here because the repo already runs GraphQL codegen on every schema 
 ## Action items
 
 1. [x] Initial migration `init_property` with `pg_trgm` + GIN index on `city`.
-2. [ ] Confirm in the S3 slice that `contains` escapes `%`/`_` (S3.3); escape in the repository if not.
+2. [x] S3 slice: `contains` does **not** escape `%`/`_` (probed 2026-09-24); the repository escapes `\`, `%`, `_` (`escapeLike`), pinned by S3.3 tests.

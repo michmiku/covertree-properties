@@ -1,8 +1,8 @@
 import { graphql } from '@/gql';
 
 export const PropertiesQuery = graphql(`
-  query Properties($orderBy: PropertyOrderBy) {
-    properties(orderBy: $orderBy) {
+  query Properties($filter: PropertyFilter, $orderBy: PropertyOrderBy) {
+    properties(filter: $filter, orderBy: $orderBy) {
       id
       street
       city

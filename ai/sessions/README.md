@@ -17,3 +17,4 @@ why lives in [`AI_WORKFLOW.md`](../../AI_WORKFLOW.md) (written by `/workflow-not
 | 2026-09-24 11:18 | [Frontend property screens and testing](2026-09-24-70daf4c1-f90d-4c87-83a3-f50089ed21a8.md) | 4 | 179 | 1 | `70daf4c1` |
 | 2026-09-24 11:57 | [Outstanding tasks review](2026-09-24-63f02b26-8b25-48f9-9f35-ce3499714545.md) | 18 | 152 | 7 | `63f02b26` |
 | 2026-09-24 12:50 | [AI workflow changes and session transcripts](2026-09-24-52e4e615-74de-4db0-b806-665698d3cfcc.md) | 6 | 29 | 0 | `52e4e615` |
+| 2026-09-24 13:42 | [Pre-submission fixes](2026-09-24-17cb9772-dcda-4f97-b2c1-a605d05133f1.md) | 2 | 81 | 1 | `17cb9772` |

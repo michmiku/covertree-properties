@@ -48,7 +48,7 @@ enter by hand. A property without that data is incomplete, so it must never be s
 | Weatherstack query     | `query="<zipCode>, <state>, USA"`, `units=f`; one request, 5 s timeout, **no retries**.                                                                               |
 | Units                  | Fahrenheit / mph / inches (`units=f`), stored as returned.                                                                                                            |
 | Weatherstack failure   | Creation fails; nothing persisted; mutation returns `WeatherUnavailableError` with a `reason` (S5.5).                                                                 |
-| Location check         | Resolved `location.country` must be in the allow-list for the input state (S5.6); otherwise `LOCATION_MISMATCH`.                                                      |
+| Location check         | Resolved `location.country` must be a US country string (S5.6); otherwise `LOCATION_MISMATCH`.                                                                        |
 | Mutation error style   | Errors-as-data: mutations return result unions; expected failures never go to `errors[]`.                                                                             |
 | Query error style      | Invalid query arguments (e.g. filter zip `85A68`) → GraphQL error, `extensions.code = BAD_USER_INPUT`.                                                                |
 | Duplicates             | Rejected. Duplicate = same `street`, `city`, `state`, `zipCode` after **trimming only** (case-sensitive). Checked before Weatherstack; DB unique constraint backs it. |
@@ -129,7 +129,8 @@ enter by hand. A property without that data is incomplete, so it must never be s
   "not found".
 - **S4.3** No Weatherstack request is made when reading details.
 - **S4.4** UI detail view shows address, coordinates and the key weather fields
-  (temperature °F, description + icon, feels-like °F, humidity, wind mph, observation time).
+  (temperature °F, description + icon, feels-like °F, humidity, wind mph, observation time
+  labelled UTC; Weatherstack's `observation_time` is UTC). Descriptions are shown trimmed.
 
 ### S5 — Create property
 
@@ -168,7 +169,7 @@ enum WeatherFailureReason {
   HTTP_ERROR # non-2xx status
   UPSTREAM_ERROR # HTTP 200 with { success: false, error }
   INVALID_RESPONSE # body fails schema validation (incl. unparsable / out-of-range lat/lon)
-  LOCATION_MISMATCH # resolved country not allowed for the input state (S5.6)
+  LOCATION_MISMATCH # resolved country is not the USA (S5.6)
 }
 ```
 
@@ -206,19 +207,11 @@ Processing order: validate → duplicate check → Weatherstack → persist.
   - `LOCATION_MISMATCH` per S5.6.
   - `message` is human-readable and does not contain the access key or raw upstream body.
   - No retry is made; exactly one request per create attempt.
-- **S5.6** Location check: `location.country` must be allowed for the input `state`:
-
-  | `state`         | allowed `location.country` |
-  | --------------- | -------------------------- |
-  | 50 states, `DC` | `United States of America` |
-  | `PR`            | `Puerto Rico`              |
-  | `GU`            | `Guam`                     |
-  | `VI`            | `Virgin Islands, U.S.`     |
-  | `AS`            | `American Samoa`           |
-  | `MP`            | `Northern Mariana Islands` |
-
-  Any other country → `WeatherUnavailableError { reason: LOCATION_MISMATCH }`, nothing persisted.
-  (Territory strings are provisional — see Open questions; the table lives in one config map.)
+- **S5.6** Location check: for every `USState` value (territories included), `location.country`
+  must be `USA United States of America` or `United States of America`. Any other country →
+  `WeatherUnavailableError { reason: LOCATION_MISMATCH }`, nothing persisted. `region` is not
+  compared. (Verified 2026-09-24: `85268, AZ, USA` and `00901, PR, USA` both return
+  `USA United States of America`; PR appears only in `region`.)
 
 - **S5.7** Weatherstack base URL and access key come from env (`WEATHERSTACK_BASE_URL`,
   `WEATHERSTACK_ACCESS_KEY`).
@@ -280,11 +273,14 @@ type PropertyNotFoundError {
 - **Isolation:** 0 real Weatherstack calls during `pnpm verify` (enforced, not just observed).
 - **Integrity:** 0 persisted rows with missing weather/lat/long (enforced by non-null columns).
 
-## Open questions (non-blocking, engineering — verify on first real call)
+## Resolved questions (verified 2026-09-24 with the real key, `weatherstack:probe`)
 
-- Does Weatherstack resolve `"<zip>, <state>, USA"` reliably for all US zips, including
-  territory zips (`00901, PR, USA`)? If territories fail, drop the `USA` suffix for them.
-- Exact `location.country` strings Weatherstack returns for territories (S5.6 table); US states
-  are expected to return `United States of America`.
-- Free tier is HTTP-only → `WEATHERSTACK_BASE_URL` defaults to `http://api.weatherstack.com`;
-  confirm with the real key.
+- `"<zip>, <state>, USA"` resolves for a state (`85268, AZ, USA` → Fountain Hills) and a
+  territory (`00901, PR, USA` → San Juan). Weatherstack treats it as a place query
+  (`request.type: "City"`), not a postal-code lookup.
+- `location.country` is `USA United States of America` for both; territories are named only in
+  `region` → S5.6 simplified to one US list.
+- `http://api.weatherstack.com` works on the free tier (default `WEATHERSTACK_BASE_URL`).
+- `current.observation_time` is UTC; `weather_descriptions` may carry trailing spaces; the body
+  also includes `astro` and `air_quality`, which are stored but not exposed.
+- Not verified: GU, VI, AS, MP (assumed to behave like PR).

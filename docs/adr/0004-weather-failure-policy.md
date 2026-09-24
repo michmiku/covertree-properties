@@ -56,4 +56,4 @@ on `success: false` (such as an invalid key or exhausted quota) cannot succeed a
 1. [x] SDL: `CreatePropertyResult`, `WeatherUnavailableError`, `WeatherFailureReason`.
 2. [ ] S5 slice: Weatherstack client with `AbortSignal.timeout(5000)` and a Zod-parsed response;
        one MSW test per `reason`, each asserting no row was written.
-3. [ ] Verify the territory `location.country` strings with the real key (SPEC open questions).
+3. [x] Verified with the real key (2026-09-24): US and PR both return `USA United States of America`; S5.6 uses one US list.

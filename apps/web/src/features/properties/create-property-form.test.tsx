@@ -68,12 +68,15 @@ describe('S5.8 create property form', () => {
   });
 
   it('S5.8 disables submit while pending', async () => {
-    server.use(respondWith(SUCCESS, [], 200));
+    server.use(respondWith(SUCCESS, [], 200), serveProperty([detailedProperty({ id: 'new-id' })]));
     const { submit } = await fillForm();
 
     void submit();
 
     expect(await screen.findByRole('button', { name: 'Creating…' })).toBeDisabled();
+    // Let the create finish here: its toast lives in Sonner's global store and would otherwise
+    // land in the next test.
+    expect(await screen.findByText('Property created')).toBeInTheDocument();
   });
 
   it('S5.8 sends the input and navigates to the new property on success', async () => {
@@ -89,6 +92,7 @@ describe('S5.8 create property form', () => {
     expect(
       await screen.findByRole('heading', { name: '15528 E Golden Eagle Blvd' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Property created')).toBeInTheDocument();
     expect(calls).toEqual([
       {
         input: {

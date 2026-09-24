@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router';
 import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/sonner';
 
 export function RootLayout() {
   return (
@@ -17,6 +18,7 @@ export function RootLayout() {
       <main className="mx-auto max-w-3xl px-4 py-8">
         <Outlet />
       </main>
+      <Toaster position="bottom-right" />
     </div>
   );
 }

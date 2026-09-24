@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useNavigate } from 'react-router';
 import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ export function DeletePropertyButton({ id, address }: { id: string; address: str
       await deleteProperty({ variables: { id } });
       // DeletePropertySuccess and PropertyNotFoundError both mean the property no longer exists.
       setOpen(false);
+      toast.success('Property deleted', { description: address });
       await navigate('/');
     } catch {
       setError('Could not reach the server. The property was not deleted.');

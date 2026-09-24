@@ -85,6 +85,7 @@ describe('delete property', () => {
     expect(within(list).getByText('1 Main St')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
     expect(within(list).queryByText('15528 E Golden Eagle Blvd')).not.toBeInTheDocument();
+    expect(await screen.findByText('Property deleted')).toBeInTheDocument();
     expect(deleted).toEqual(['property-1']);
 
     await router.navigate('/properties/property-1');

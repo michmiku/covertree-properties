@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Link, useNavigate } from 'react-router';
 import { CloudOff } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export function CreatePropertyForm() {
       const result = data?.createProperty;
       switch (result?.__typename) {
         case 'CreatePropertySuccess':
+          toast.success('Property created', { description: values.street.trim() });
           await navigate(`/properties/${result.property.id}`);
           return;
         case 'InvalidInputError':

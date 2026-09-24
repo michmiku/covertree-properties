@@ -10,3 +10,4 @@ ai/sessions/**
 .claude/skills/architecture/**
 .claude/skills/write-spec/**
 .claude/skills/LICENSE-knowledge-work-plugins
+.playwright-mcp

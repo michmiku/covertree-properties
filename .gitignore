@@ -9,3 +9,5 @@ test-results/
 *.log
 ai/sessions/.archive.log
 **/__generated__/
+**/src/gql/
+.playwright-mcp/

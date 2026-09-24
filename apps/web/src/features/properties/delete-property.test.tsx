@@ -118,6 +118,8 @@ describe('delete property', () => {
 
     expect(await screen.findByText('No properties yet')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
+    expect(screen.getByText('Property was already deleted')).toBeInTheDocument();
+    expect(screen.queryByText('Property deleted')).not.toBeInTheDocument();
   });
 
   it('S6.6 keeps the dialog open with an error when the server cannot be reached', async () => {

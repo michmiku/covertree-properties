@@ -46,10 +46,13 @@ async function fillForm({
 
 describe('S5.8 create property form', () => {
   it('S5.8 shows field errors client-side and sends nothing', async () => {
-    // No handler: a request would fail the test via onUnhandledRequest.
+    const calls: CreatePropertyMutationVariables[] = [];
+    server.use(respondWith(SUCCESS, calls));
     const { submit } = await fillForm({ street: '', city: '   ', state: '', zipCode: '85A' });
 
     await submit();
+
+    expect(calls).toHaveLength(0);
 
     expect(screen.getByText('Street is required.')).toBeInTheDocument();
     expect(screen.getByText('City is required.')).toBeInTheDocument();

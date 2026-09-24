@@ -55,8 +55,6 @@ describe('Weatherstack client', () => {
     ['INVALID_RESPONSE', (r: URL[]) => weatherstack.notJson(r)],
     ['INVALID_RESPONSE', (r: URL[]) => weatherstack.missingCurrent(r)],
     ['INVALID_RESPONSE', (r: URL[]) => weatherstack.withLocation({ lat: 'north' }, r)],
-    ['INVALID_RESPONSE', (r: URL[]) => weatherstack.withLocation({ lat: '91' }, r)],
-    ['INVALID_RESPONSE', (r: URL[]) => weatherstack.withLocation({ lon: '-181' }, r)],
     ['INVALID_RESPONSE', (r: URL[]) => weatherstack.withLocation({ lat: '0x10' }, r)],
     ['INVALID_RESPONSE', (r: URL[]) => weatherstack.withLocation({ lat: '1e1' }, r)],
     ['INVALID_RESPONSE', (r: URL[]) => withCurrent({ humidity: 42.5 }, r)],
@@ -69,6 +67,19 @@ describe('Weatherstack client', () => {
     expect(lookup.reason).toBe(reason);
     expect(requests).toHaveLength(1);
     expect(lookup.detail).not.toContain(TEST_ACCESS_KEY);
+  });
+
+  it.each([
+    ['lat', '91'],
+    ['lat', '-90.5'],
+    ['lon', '-181'],
+    ['lon', '180.01'],
+  ])('S7.3 rejects out-of-range %s %s as INVALID_RESPONSE', async (field, value) => {
+    server.use(weatherstack.withLocation({ [field]: value }));
+
+    const lookup = failure(await client().current('85268, AZ, USA'));
+
+    expect(lookup.reason).toBe('INVALID_RESPONSE');
   });
 
   it('S5.5 reports TIMEOUT when no response arrives in time', async () => {

@@ -215,9 +215,14 @@ describe('createProperty (GraphQL → Postgres)', () => {
   });
 
   it('S5.4 lets only one of two concurrent identical creates succeed', async () => {
-    server.use(weatherstack.ok());
+    // Both requests reach Weatherstack, so both passed the duplicate check before either insert:
+    // the loser is caught by the unique constraint, not by findByAddress.
+    const requests: URL[] = [];
+    server.use(weatherstack.afterRequests(2, requests));
 
     const results = await Promise.all([create(), create()]);
+
+    expect(requests).toHaveLength(2);
 
     const typenames = results.map((r) => r.body.data!.createProperty.__typename).sort();
     expect(typenames).toEqual(['CreatePropertySuccess', 'DuplicatePropertyError']);

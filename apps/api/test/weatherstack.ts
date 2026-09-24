@@ -46,4 +46,14 @@ export const weatherstack = {
   notJson: (requests?: URL[]) =>
     respond(() => new HttpResponse('<html>oops</html>', { status: 200 }), requests),
   missingCurrent: (requests?: URL[]) => respond({ location: fixture.location }, requests),
+  /** Holds every response until `count` requests have arrived, then answers them all with `ok`. */
+  afterRequests: (count: number, requests: URL[] = []) => {
+    let release: () => void;
+    const arrived = new Promise<void>((resolve) => (release = resolve));
+    return respond(async () => {
+      if (requests.length >= count) release();
+      await arrived;
+      return HttpResponse.json(fixture);
+    }, requests);
+  },
 };

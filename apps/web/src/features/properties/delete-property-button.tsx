@@ -42,10 +42,14 @@ export function DeletePropertyButton({
   async function onConfirm() {
     setError(undefined);
     try {
-      await deleteProperty({ variables: { id } });
+      const { data } = await deleteProperty({ variables: { id } });
       // DeletePropertySuccess and PropertyNotFoundError both mean the property no longer exists.
       setOpen(false);
-      toast.success('Property deleted', { description: address });
+      if (data?.deleteProperty.__typename === 'PropertyNotFoundError') {
+        toast.info('Property was already deleted', { description: address });
+      } else {
+        toast.success('Property deleted', { description: address });
+      }
       await navigate(returnTo);
     } catch {
       setError('Could not reach the server. The property was not deleted.');

@@ -1,10 +1,17 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { archive } from '../archive-session.mjs';
-import { findLeaks, redact } from '../lib/redact.mjs';
+import { findLeaks, loadSecrets, redact } from '../lib/redact.mjs';
 import { renderEntries, summarize, truncate } from '../lib/render.mjs';
 
 const SID = '11111111-2222-3333-4444-555555555555';
@@ -109,6 +116,53 @@ describe('redact', () => {
     assert.deepEqual(findLeaks(out), []);
   });
 
+  it('removes secrets in quoted, YAML, JSON, inspect and URL-encoded forms', () => {
+    const key = 'abcdef0123456789abcdef0123456789';
+    for (const text of [
+      `WEATHERSTACK_ACCESS_KEY="${key}"`,
+      `WEATHERSTACK_ACCESS_KEY='${key}'`,
+      `WEATHERSTACK_ACCESS_KEY: ${key}`,
+      `"WEATHERSTACK_ACCESS_KEY": "${key}"`,
+      `WEATHERSTACK_ACCESS_KEY: '${key}',`,
+      `{ accessKey: '${key}' }`,
+      `"api_key": "${key}"`,
+      `http://api.weatherstack.com/current?query=x%26access_key%3D${key}`,
+    ]) {
+      const out = redact(text);
+      assert.ok(!out.includes(key), `key survived: ${out}`);
+      assert.deepEqual(findLeaks(out), [], text);
+      // The same text inside a JSONL line stays valid JSON.
+      const line = JSON.stringify({ c: text });
+      assert.ok(!redact(line).includes(key), `key survived in JSON: ${redact(line)}`);
+      assert.doesNotThrow(() => JSON.parse(redact(line)));
+    }
+  });
+
+  it('leaves code that only names a secret readable', () => {
+    const text = 'WEATHERSTACK_ACCESS_KEY: z.string().min(1), WEATHERSTACK_ACCESS_KEY=${KEY:-}';
+    assert.equal(redact(text).slice(0, 44), text.slice(0, 44));
+  });
+
+  it('removes exact .env secret values in any format and never echoes them in leak reports', () => {
+    const secret = 'Zq9-unusual/secret+"value';
+    const text = `echo ${secret} | ${encodeURIComponent(secret)} | ${JSON.stringify({ secret })}`;
+    assert.ok(!redact(text, { secrets: [secret] }).includes('Zq9'));
+    assert.deepEqual(findLeaks(text, { secrets: [secret] }), [
+      { kind: 'env secret value', sample: '[value from .env]' },
+    ]);
+  });
+
+  it('loads only secret-named, non-placeholder values from an env file', () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'archive-env-'));
+    const env = path.join(dir, '.env');
+    writeFileSync(
+      env,
+      'WEATHERSTACK_ACCESS_KEY=real-key-123456\nPORT=4000\nAPI_TOKEN=short\nOTHER_KEY=your-access-key\n',
+    );
+    assert.deepEqual(loadSecrets(env), ['real-key-123456']);
+    assert.deepEqual(loadSecrets(path.join(dir, 'missing')), []);
+  });
+
   it('keeps JSON lines parseable', () => {
     const line = JSON.stringify({ c: 'x\naccess_key=abc\\n"quoted" me@x.io' });
     assert.doesNotThrow(() => JSON.parse(redact(line)));
@@ -169,6 +223,23 @@ describe('archive', () => {
 
     const index = readFileSync(path.join(outDir, 'README.md'), 'utf8');
     assert.match(index, new RegExp(`\\[Test session\\]\\(${base}\\.md\\)`));
+  });
+
+  it('writes nothing when redaction leaves a secret behind', () => {
+    const { transcript, outDir } = fixture();
+    // A redactor with a gap: it skips exact .env values, which the leak check still finds.
+    const { written, leaks } = archive({
+      transcript,
+      outDir,
+      secrets: ['Fetch weather'],
+      scrubWith: (text) => redact(text),
+    });
+    assert.deepEqual(written, []);
+    assert.ok(leaks.length > 0);
+    assert.ok(!existsSync(outDir) || readdirSync(outDir).every((f) => f === 'raw'));
+    assert.ok(
+      !existsSync(path.join(outDir, 'raw')) || readdirSync(path.join(outDir, 'raw')).length === 0,
+    );
   });
 
   it('is idempotent when re-run on the same transcript', () => {

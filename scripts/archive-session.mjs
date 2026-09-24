@@ -13,14 +13,23 @@
  *   <out>/raw/<date>-<id>.<agentId>.jsonl  one per subagent
  *   <out>/<date>-<id>.md                   readable rendering
  *   <out>/README.md                        regenerated index
- * Exits non-zero if anything sensitive survives redaction.
+ * Fails closed: content is checked for leaks before anything is written, so a transcript that
+ * still looks sensitive after redaction is never archived (exit 1, leak kinds in .archive.log).
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { findLeaks, redact } from './lib/redact.mjs';
+import { findLeaks, loadSecrets, redact } from './lib/redact.mjs';
 import { parseJsonl, renderSession, summarize } from './lib/render.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -62,9 +71,12 @@ function loadSubagents(transcriptPath, sessionId) {
     });
 }
 
-const redactJsonl = (raw) => raw.split('\n').map(redact).join('\n');
-
-export function archive({ transcript, sessionId, outDir }) {
+/**
+ * Redacts and writes one session. `secrets` are exact values to remove (see `loadSecrets`);
+ * `scrubWith` exists so tests can simulate a redaction gap. Returns `{ base, written, leaks }`;
+ * when `leaks` is non-empty nothing was written.
+ */
+export function archive({ transcript, sessionId, outDir, secrets = [], scrubWith = redact }) {
   const raw = readFileSync(transcript, 'utf8');
   const entries = parseJsonl(raw);
   const meta = summarize(entries);
@@ -72,24 +84,32 @@ export function archive({ transcript, sessionId, outDir }) {
   if (!meta.started) throw new Error(`No timestamps in ${transcript}; cannot date the session.`);
   const base = `${meta.started.slice(0, 10)}-${id}`;
   const subagents = loadSubagents(transcript, id);
+  const scrub = (text) => scrubWith(text, { secrets });
+  const scrubJsonl = (text) => text.split('\n').map(scrub).join('\n');
 
   const rawDir = path.join(outDir, 'raw');
-  mkdirSync(rawDir, { recursive: true });
-  const written = [];
-  const write = (file, content) => {
-    writeFileSync(file, content);
-    written.push(file);
-  };
-  write(path.join(rawDir, `${base}.jsonl`), redactJsonl(raw));
+  const files = new Map([[path.join(rawDir, `${base}.jsonl`), scrubJsonl(raw)]]);
   for (const a of subagents)
-    write(path.join(rawDir, `${base}.${a.agentId}.jsonl`), redactJsonl(a.raw));
-  write(path.join(outDir, `${base}.md`), redact(renderSession({ entries, subagents })));
-  write(path.join(outDir, 'README.md'), renderIndex(outDir));
+    files.set(path.join(rawDir, `${base}.${a.agentId}.jsonl`), scrubJsonl(a.raw));
+  files.set(path.join(outDir, `${base}.md`), scrub(renderSession({ entries, subagents })));
 
-  const leaks = written.flatMap((file) =>
-    findLeaks(readFileSync(file, 'utf8')).map((l) => ({ file: path.relative(REPO, file), ...l })),
-  );
-  return { base, written, leaks };
+  const leaksIn = (file, content) =>
+    findLeaks(content, { secrets }).map((l) => ({ file: path.relative(REPO, file), ...l }));
+  let leaks = [...files].flatMap(([file, content]) => leaksIn(file, content));
+  if (leaks.length) return { base, written: [], leaks };
+
+  mkdirSync(rawDir, { recursive: true });
+  for (const [file, content] of files) writeFileSync(file, content);
+  // The index is built from the session files on disk, so check it after they are in place.
+  const readme = path.join(outDir, 'README.md');
+  const index = renderIndex(outDir);
+  leaks = leaksIn(readme, index);
+  if (leaks.length) {
+    for (const file of files.keys()) rmSync(file, { force: true });
+    return { base, written: [], leaks };
+  }
+  writeFileSync(readme, index);
+  return { base, written: [...files.keys(), readme], leaks };
 }
 
 const SESSION_MD = /^(\d{4}-\d{2}-\d{2})-([0-9a-f-]{36})\.md$/;
@@ -151,12 +171,16 @@ async function main() {
     transcript: path.resolve(values.transcript),
     sessionId: values['session-id'],
     outDir,
+    secrets: loadSecrets(path.join(REPO, '.env')),
   });
-  console.log(`[${new Date().toISOString()}] archived ${base}: ${written.length} files`);
   if (leaks.length) {
+    // .archive.log is gitignored; samples of pattern leaks help widen the rules.
     for (const l of leaks) console.error(`LEAK ${l.kind} in ${l.file}: …${l.sample}…`);
+    console.error(`[${new Date().toISOString()}] NOT archived ${base}: redaction left secrets`);
     process.exitCode = 1;
+    return;
   }
+  console.log(`[${new Date().toISOString()}] archived ${base}: ${written.length} files`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === SELF) {

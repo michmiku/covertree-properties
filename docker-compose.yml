@@ -48,7 +48,7 @@ services:
       DATABASE_URL: postgresql://covertree:covertree@postgres:5432/covertree
       # Read from the repo-root .env. Missing key → the API exits naming the variable.
       WEATHERSTACK_ACCESS_KEY: ${WEATHERSTACK_ACCESS_KEY:-}
-      WEATHERSTACK_BASE_URL: http://api.weatherstack.com
+      WEATHERSTACK_BASE_URL: ${WEATHERSTACK_BASE_URL:-https://api.weatherstack.com}
       PORT: 4000
     ports:
       - '127.0.0.1:4000:4000'

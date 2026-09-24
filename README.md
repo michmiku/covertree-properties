@@ -34,31 +34,28 @@ docker compose -f docker-compose.yml -f docker-compose.stub.yml up --build
 
 Copy `.env.example` to `.env` at the repo root. Both apps read it; `.env` is never committed.
 
-| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                                              |
-| ------------------------- | --------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                                               |
-| `WEATHERSTACK_BASE_URL`   | API       | `http://api.weatherstack.com`                                    | Keep `http://` on the free plan (see below). `http://localhost:4999` for the stub. |
-| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                                                 |
-| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs).                        |
-| `PORT`                    | API       | `4000`                                                           |                                                                                    |
-| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                                             |
+| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                       |
+| ------------------------- | --------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                        |
+| `WEATHERSTACK_BASE_URL`   | API       | `https://api.weatherstack.com`                                   | `http://localhost:4999` for the stub.                       |
+| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                          |
+| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs). |
+| `PORT`                    | API       | `4000`                                                           |                                                             |
+| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                      |
 
 The API checks its variables on start and exits naming any that are missing or invalid.
-`docker compose up` only takes `WEATHERSTACK_ACCESS_KEY` from `.env`. It sets the rest itself, so
-the containers reach each other by service name.
+`docker compose up` only takes `WEATHERSTACK_ACCESS_KEY` and `WEATHERSTACK_BASE_URL` from `.env`.
+It sets the rest itself, so the containers reach each other by service name. A `localhost` base URL
+does not work inside the container; use `docker-compose.stub.yml` for the stub instead.
 
 ## Weatherstack plan
 
-The app works on Weatherstack's **free plan**, with two limits:
-
-- **HTTP only.** The free plan rejects `https://` requests (error 105), so the base URL is
-  `http://api.weatherstack.com`. The key travels in the query string over plain HTTP, so use a
-  paid plan and `https://` for anything beyond local use.
-- **About 100 calls a month.** Only `createProperty` calls Weatherstack, once per property.
-  Invalid input and duplicates are rejected before the call, so they don't use quota. Listing,
-  details and delete read from Postgres. When the quota runs out, Weatherstack answers HTTP 200
-  with `success: false`. The API reports that as `WeatherUnavailableError { reason: UPSTREAM_ERROR }`
-  and saves nothing ([ADR 0004](docs/adr/0004-weather-failure-policy.md)).
+The app works on Weatherstack's **free plan** over `https://`. The plan allows **about 100 calls a
+month**. Only `createProperty` calls Weatherstack, once per property. Invalid input and duplicates
+are rejected before the call, so they don't use quota. Listing, details and delete read from
+Postgres. When the quota runs out, Weatherstack answers HTTP 200 with `success: false`. The API
+reports that as `WeatherUnavailableError { reason: UPSTREAM_ERROR }` and saves nothing
+([ADR 0004](docs/adr/0004-weather-failure-policy.md)).
 
 Tests never call Weatherstack, so they cost no quota. For manual testing, use the stub.
 

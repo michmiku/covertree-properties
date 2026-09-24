@@ -30,8 +30,8 @@ git log (`8499d6a`..`fbd8e43`).
 - [ ] **Prisma CLI in the API image.** `@prisma/client` peers on `prisma`, so the CLI, Studio,
       React and TypeScript ship in the runtime image (786 MB), including 6 `pnpm audit` findings
       that are not on the request path. Revisit on the next Prisma release.
-- [ ] **Icon URLs.** Weatherstack is plain HTTP on the free plan, so a tampered response could
-      set `weather_icons` to any URL (`<img src>`, no script execution). Optionally accept only
+- [ ] **Icon URLs.** The API stores `weather_icons` as Weatherstack returns them, so a bad or
+      compromised upstream response could set any URL (`<img src>`, no script execution). Optionally accept only
       known Weatherstack hosts over https.
 
 ### Design (fix at the right layer)

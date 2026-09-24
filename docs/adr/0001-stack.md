@@ -10,8 +10,8 @@ We need a GraphQL API + React app for US property records ([SPEC](../SPEC.md)). 
 the brief: TypeScript/Node backend, React/TypeScript frontend, any database, a running app with a
 README, Weatherstack called only in the create mutation. The assessment grades technology
 selection, code smells/complexity, scope completion and the AI harness, so we want **the smallest stack that is
-still production-shaped**. Weatherstack's free tier is ~100 calls/month and (historically)
-HTTP-only, so tests must never reach it.
+still production-shaped**. Weatherstack's free tier is ~100 calls/month, so tests must never
+reach it.
 
 ## Decision
 
@@ -81,8 +81,8 @@ pagination, auth) is left out and recorded in SPEC non-goals.
 
 - **Easier:** adding a field = edit `schema.graphql` → types regenerate for resolvers and UI;
   Weatherstack behaviour is testable offline (injected client + MSW).
-- **Harder:** onboarding needs Docker; the free Weatherstack tier's HTTP-only restriction means the
-  base URL must be configurable.
+- **Harder:** onboarding needs Docker; tests and e2e replace Weatherstack, so its base URL must be
+  configurable.
 - **Revisit:** pagination (SPEC P2); Prisma/Apollo major versions — check docs via context7 when
   scaffolding.
 

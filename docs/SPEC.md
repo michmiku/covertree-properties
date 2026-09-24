@@ -284,7 +284,7 @@ type PropertyNotFoundError {
   (`request.type: "City"`), not a postal-code lookup.
 - `location.country` is `USA United States of America` for both; territories are named only in
   `region` → S5.6 simplified to one US list.
-- `http://api.weatherstack.com` works on the free tier (default `WEATHERSTACK_BASE_URL`).
+- `https://api.weatherstack.com` works on the free tier (default `WEATHERSTACK_BASE_URL`).
 - `current.observation_time` is UTC; `weather_descriptions` may carry trailing spaces; the body
   also includes `astro` and `air_quality`, which are stored but not exposed.
 - Not verified: GU, VI, AS, MP (assumed to behave like PR).

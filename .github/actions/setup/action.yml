@@ -1,5 +1,5 @@
 name: Setup
-description: Node from .nvmrc, pnpm from package.json, frozen install (postinstall runs Prisma + GraphQL codegen).
+description: Node from .nvmrc, pnpm from package.json, frozen install (postinstall runs `prisma generate`; GraphQL types are committed).
 runs:
   using: composite
   steps:

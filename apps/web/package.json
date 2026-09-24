@@ -10,7 +10,6 @@
     "codegen": "graphql-codegen",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "postinstall": "graphql-codegen",
     "e2e": "playwright test"
   },
   "dependencies": {

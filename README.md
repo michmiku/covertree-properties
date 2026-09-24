@@ -34,14 +34,15 @@ docker compose -f docker-compose.yml -f docker-compose.stub.yml up --build
 
 Copy `.env.example` to `.env` at the repo root. Both apps read it; `.env` is never committed.
 
-| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                       |
-| ------------------------- | --------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
-| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                        |
-| `WEATHERSTACK_BASE_URL`   | API       | `https://api.weatherstack.com`                                   | `http://localhost:4999` for the stub.                       |
-| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                          |
-| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs). |
-| `PORT`                    | API       | `4000`                                                           |                                                             |
-| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                      |
+| Variable                  | Used by   | Default in `.env.example`                                        | Notes                                                        |
+| ------------------------- | --------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| `WEATHERSTACK_ACCESS_KEY` | API       | `your-access-key`                                                | **Required.** Your Weatherstack key.                         |
+| `WEATHERSTACK_BASE_URL`   | API       | `https://api.weatherstack.com`                                   | `http://localhost:4999` for the stub.                        |
+| `DATABASE_URL`            | API       | `postgresql://covertree:covertree@localhost:5432/covertree`      | Dev database (`postgres` service).                           |
+| `TEST_DATABASE_URL`       | API tests | `postgresql://covertree:covertree@localhost:5433/covertree_test` | Integration tests and e2e (`postgres-test` service, tmpfs).  |
+| `PORT`                    | API       | `4000`                                                           |                                                              |
+| `WEB_ORIGIN`              | API       | `http://localhost:5173`                                          | Only origin allowed by CORS. Open the app on this exact URL. |
+| `VITE_GRAPHQL_URL`        | web       | `http://localhost:4000/graphql`                                  | Inlined at build time.                                       |
 
 The API checks its variables on start and exits naming any that are missing or invalid.
 `docker compose up` only takes `WEATHERSTACK_ACCESS_KEY` and `WEATHERSTACK_BASE_URL` from `.env`.

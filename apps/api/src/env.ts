@@ -7,6 +7,12 @@ const Env = z.object({
   WEATHERSTACK_BASE_URL: z.url().default('https://api.weatherstack.com'),
   WEATHERSTACK_ACCESS_KEY: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(4000),
+  // The only browser origin allowed to call the API (CORS). Normalized to scheme://host:port.
+  WEB_ORIGIN: z
+    .url()
+    .default('http://localhost:5173')
+    .transform((url) => new URL(url).origin),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 
 export type Env = z.infer<typeof Env>;

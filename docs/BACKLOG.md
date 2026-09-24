@@ -19,8 +19,8 @@ git log (`8499d6a`..`fbd8e43`).
       unlimited. Add per-IP limiting in front of the API (reverse proxy) before it is exposed.
 - [ ] **CI permissions and pinning.** Add `permissions: contents: read` to `ci.yml`; pin actions
       to commit SHAs.
-- [ ] **Production defaults.** Disable GraphiQL and introspection when `NODE_ENV=production`;
-      restrict CORS to the web origin; add nginx security headers (CSP, `nosniff`,
+- [ ] **Production defaults.** GraphiQL is off and CORS allows only `WEB_ORIGIN`; still disable
+      introspection when `NODE_ENV=production` and add nginx security headers (CSP, `nosniff`,
       `frame-ancestors`) and `gzip on`.
 - [ ] **Pin the Playwright MCP.** `.mcp.json` runs `@playwright/mcp@latest`.
 - [ ] **Integration tests lack a test-database guard.** `test/database.ts` truncates whatever

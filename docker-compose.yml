@@ -50,6 +50,7 @@ services:
       WEATHERSTACK_ACCESS_KEY: ${WEATHERSTACK_ACCESS_KEY:-}
       WEATHERSTACK_BASE_URL: ${WEATHERSTACK_BASE_URL:-https://api.weatherstack.com}
       PORT: 4000
+      WEB_ORIGIN: http://localhost:5173
     ports:
       - '127.0.0.1:4000:4000'
     depends_on:

@@ -8,3 +8,4 @@ test-results/
 .env.local
 *.log
 ai/sessions/.archive.log
+**/__generated__/

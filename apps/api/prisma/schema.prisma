@@ -1,0 +1,93 @@
+// Prisma 7: connection URL lives in prisma.config.ts, not here.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/__generated__/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Mirrors the GraphQL `USState` enum (schema.graphql is the source of truth).
+enum USState {
+  AL
+  AK
+  AZ
+  AR
+  CA
+  CO
+  CT
+  DE
+  FL
+  GA
+  HI
+  ID
+  IL
+  IN
+  IA
+  KS
+  KY
+  LA
+  ME
+  MD
+  MA
+  MI
+  MN
+  MS
+  MO
+  MT
+  NE
+  NV
+  NH
+  NJ
+  NM
+  NY
+  NC
+  ND
+  OH
+  OK
+  OR
+  PA
+  RI
+  SC
+  SD
+  TN
+  TX
+  UT
+  VT
+  VA
+  WA
+  WV
+  WI
+  WY
+  DC
+  PR
+  GU
+  VI
+  AS
+  MP
+}
+
+model Property {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  street      String   @db.VarChar(200)
+  city        String   @db.VarChar(100)
+  state       USState
+  zipCode     String   @map("zip_code") @db.Char(5)
+  /// Weatherstack `current` object, stored as returned (snake_case keys).
+  weatherData Json     @map("weather_data")
+  lat         Float
+  long        Float
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  // S5.4 duplicate rule: values are stored trimmed, so an exact match is the rule.
+  @@unique([street, city, state, zipCode])
+  // S2 sort + id tiebreak (S2.3); a btree serves both ASC and DESC.
+  @@index([createdAt, id])
+  // S3.2 city filter is ILIKE '%…%'; only a trigram index can serve it.
+  // pg_trgm is created in the migration SQL.
+  @@index([city(ops: raw("gin_trgm_ops"))], type: Gin, map: "properties_city_trgm_idx")
+  @@index([state])
+  @@index([zipCode])
+  @@map("properties")
+}

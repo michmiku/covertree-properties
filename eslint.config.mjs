@@ -48,7 +48,7 @@ export default tseslint.config(
     ['apps/api/src/resolvers/**'],
     [
       {
-        group: ['@prisma/client', '**/generated/prisma/**', '**/repositories/**'],
+        group: ['@prisma/client', '**/__generated__/prisma/**', '**/repositories/**'],
         message: 'Resolvers call services only (resolver -> service -> repository).',
       },
       {
@@ -66,7 +66,7 @@ export default tseslint.config(
         message: 'Services are transport-agnostic: no GraphQL imports.',
       },
       {
-        group: ['@prisma/client', '**/generated/prisma/**'],
+        group: ['@prisma/client', '**/__generated__/prisma/**'],
         message: 'Services access data through repositories, not Prisma directly.',
       },
     ],

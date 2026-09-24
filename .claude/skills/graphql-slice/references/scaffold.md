@@ -11,14 +11,15 @@ apps/api/
   package.json          name "api", type module; scripts below
   tsconfig.json         extends ../../tsconfig.base.json
   codegen.ts            typescript + typescript-resolvers → src/__generated__/resolvers-types.ts
-                        mappers: Property → Prisma Property model; contextType → ./context#Context
-  prisma/schema.prisma  Property: id uuid @default(uuid()), street, city, state, zipCode,
-                        lat Float, long Float, weatherData Json, createdAt @default(now())
-                        @@index([state, city]) @@index([zipCode]) @@index([createdAt])
+                        mappers: Property → Prisma Property (mapperTypeSuffix Model); enumsAsTypes
+  prisma.config.ts      Prisma 7: schema/migrations paths + datasource url (loads root .env)
+  prisma/schema.prisma  generator prisma-client → src/__generated__/prisma; see the file for
+                        Property + indexes (pg_trgm GIN on city is created in migration SQL)
   src/schema.graphql    the contract
   src/server.ts         createYoga({ schema, context }) on node:http; PORT from env
-  src/schema.ts         makeExecutableSchema(typeDefs from schema.graphql, resolvers)
-  src/context.ts        builds { services } once: prisma → repositories → services(+ weatherstack)
+  src/app.ts            createYoga({ schema: createSchema({ typeDefs, resolvers }), context })
+  src/db.ts             PrismaClient with @prisma/adapter-pg (Prisma 7 needs a driver adapter)
+  src/context.ts        Context = { services }; server.ts builds prisma → repositories → services
   src/env.ts            Zod-parsed env (DATABASE_URL, WEATHERSTACK_BASE_URL, WEATHERSTACK_ACCESS_KEY, PORT)
   src/weatherstack/     client.ts (fetch + AbortSignal.timeout(5000) + Zod parse), types
   src/repositories/  src/services/  src/resolvers/
@@ -33,8 +34,9 @@ Scripts: `dev` (tsx watch src/server.ts), `build` (tsc -p tsconfig.build.json or
 (tsc --noEmit), `codegen` (graphql-codegen), `test` (vitest run), `test:unit` (vitest run
 --project unit, or a path filter that excludes `*.int.test.ts`), `db:migrate`, `db:reset`.
 
-Integration tests (`*.int.test.ts`) need postgres-test. Run `prisma migrate reset --force` against
-`TEST_DATABASE_URL` in a globalSetup, and truncate between tests.
+Integration tests (`*.int.test.ts`) need postgres-test. Global setup runs `prisma migrate deploy`
+against it; tests call `resetTables()` (TRUNCATE) in `beforeEach`. Don't use `migrate reset`: Prisma
+blocks it when run by an AI agent unless the user consents each time.
 
 ## apps/web
 

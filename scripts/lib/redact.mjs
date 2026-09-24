@@ -10,11 +10,12 @@ const VALUE = String.raw`[^\s"'&\\]+`;
 
 // Names that hold secrets in env files, compose output and `process.env` dumps.
 const SECRET_NAME = String.raw`[A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD)[A-Z0-9_]*`;
-// An optional quote, raw or JSON-escaped (`"`, `\"`, `'`), kept in place so JSON stays valid.
-const Q = String.raw`\\?["']?`;
+// An optional quote, raw or JSON-escaped once or more (`"`, `\"`, `\\\"`, `'`), kept in place so
+// JSON stays valid. Tool output that prints JSON is escaped again in the .jsonl line.
+const Q = String.raw`\\*["']?`;
 // Token-like value for unquoted `NAME: value` (YAML, inspect output), so code such as
 // `WEATHERSTACK_ACCESS_KEY: z.string()` in a transcript is left readable.
-const TOKEN = String.raw`[A-Za-z0-9_\-.+/=]{8,}(?=[\s"',}\\]|$)`;
+const TOKEN = String.raw`[A-Za-z0-9_\-.+/=]{8,}(?=[\s"',;)\]}\\\`]|$)`;
 
 /** Ordered [pattern, replacement] rules. Applied to raw JSONL lines and rendered Markdown alike. */
 export const RULES = [
@@ -30,7 +31,7 @@ export const RULES = [
   // camelCase / snake_case fields with a quoted value: accessKey: 'v', "api_key": "v".
   [
     new RegExp(
-      String.raw`\b((?:access|api|secret|auth)_?key${Q}[ \t]*[:=][ \t]*\\?["'])(?!\[REDACTED)${VALUE}`,
+      String.raw`\b((?:access|api|secret|auth)_?key${Q}[ \t]*[:=][ \t]*\\*["'])(?!\[REDACTED)${VALUE}`,
       'gi',
     ),
     `$1${R}`,

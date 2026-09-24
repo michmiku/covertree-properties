@@ -116,7 +116,7 @@ describe('redact', () => {
     assert.deepEqual(findLeaks(out), []);
   });
 
-  it('removes secrets in quoted, YAML, JSON, inspect and URL-encoded forms', () => {
+  it('removes secrets in quoted, YAML, JSON, nested JSON, inspect and URL-encoded forms', () => {
     const key = 'abcdef0123456789abcdef0123456789';
     for (const text of [
       `WEATHERSTACK_ACCESS_KEY="${key}"`,
@@ -124,6 +124,8 @@ describe('redact', () => {
       `WEATHERSTACK_ACCESS_KEY: ${key}`,
       `"WEATHERSTACK_ACCESS_KEY": "${key}"`,
       `WEATHERSTACK_ACCESS_KEY: '${key}',`,
+      `[\`WEATHERSTACK_ACCESS_KEY: ${key}\`];`,
+      `export WEATHERSTACK_ACCESS_KEY="${key}"`,
       `{ accessKey: '${key}' }`,
       `"api_key": "${key}"`,
       `http://api.weatherstack.com/current?query=x%26access_key%3D${key}`,
@@ -135,6 +137,11 @@ describe('redact', () => {
       const line = JSON.stringify({ c: text });
       assert.ok(!redact(line).includes(key), `key survived in JSON: ${redact(line)}`);
       assert.doesNotThrow(() => JSON.parse(redact(line)));
+      // Tool output that prints JSON-escaped text is escaped again in the .jsonl line.
+      const nested = JSON.stringify({ c: JSON.stringify(JSON.stringify(text)) });
+      assert.ok(!redact(nested).includes(key), `key survived in nested JSON: ${redact(nested)}`);
+      assert.deepEqual(findLeaks(redact(nested)), [], nested);
+      assert.doesNotThrow(() => JSON.parse(JSON.parse(JSON.parse(redact(nested)).c)));
     }
   });
 

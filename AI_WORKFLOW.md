@@ -74,7 +74,7 @@ the harness was agreed.
 
 - **Files:** `ai/sessions/<YYYY-MM-DD>-<session-id>.md` (readable) and `ai/sessions/raw/<date>-<id>[.<agentId>].jsonl` (redacted raw, main + subagents). The date is the UTC date of the first entry.
 - **Rendered:** user prompts (including feedback given when rejecting a plan, and answers to questions), assistant replies, tool calls with inputs, and tool outputs truncated to 40 lines / 4 KB. System reminders and metadata are stripped.
-- **Redacted in both files:** the exact values of secret-named `.env` variables (plain, URL-encoded and JSON-escaped), emails, `access_key=`/`%3D` query params, `*KEY/SECRET/TOKEN/PASSWORD` values written as `=`, `:`, quoted, JSON or YAML, camelCase `accessKey`-style fields, bearer tokens, API keys, connection-string credentials, account/organization IDs, and absolute home paths.
+- **Redacted in both files:** the exact values of secret-named `.env` variables (plain, URL-encoded and JSON-escaped), emails, `access_key=`/`%3D` query params, `*KEY/SECRET/TOKEN/PASSWORD` values written as `=`, `:`, quoted, JSON (escaped at any depth) or YAML, camelCase `accessKey`-style fields, bearer tokens, API keys, connection-string credentials, account/organization IDs, and absolute home paths.
 - **Fails closed:** everything is scanned in memory before anything is written. On any match nothing is archived; the leak kind (never an `.env` value) is logged to `ai/sessions/.archive.log`.
 - **Tests:** `scripts/__tests__/archive-session.test.mjs` (`pnpm run test:scripts`).
 

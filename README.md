@@ -6,6 +6,7 @@ Weatherstack weather and the location's latitude/longitude with it.
 
 - Contract and acceptance criteria: [docs/SPEC.md](docs/SPEC.md)
 - Design decisions: [docs/adr/](docs/adr/)
+- Deferred work and proposed features: [docs/BACKLOG.md](docs/BACKLOG.md)
 - How the AI tooling was used: [AI_WORKFLOW.md](AI_WORKFLOW.md)
 
 ## Quick start (one command)

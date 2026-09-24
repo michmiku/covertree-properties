@@ -2,7 +2,8 @@
 
 GraphQL API (`apps/api`) + React app (`apps/web`) for US property records; `createProperty`
 enriches each record with Weatherstack weather + lat/long. Contract: [docs/SPEC.md](docs/SPEC.md)
-(story IDs `S1`–`S7`, criteria like `S3.2`). Stack rationale: [docs/adr/](docs/adr/). Harness
+(story IDs `S1`–`S7`, criteria like `S3.2`). Stack rationale: [docs/adr/](docs/adr/).
+Deferred findings and proposed features: [docs/BACKLOG.md](docs/BACKLOG.md). Harness
 and session log: [AI_WORKFLOW.md](AI_WORKFLOW.md).
 
 ## Commands

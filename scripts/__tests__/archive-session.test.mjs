@@ -249,6 +249,20 @@ describe('archive', () => {
     );
   });
 
+  it('titles sessions from labels.json in the index, keyed by the short session id', () => {
+    const { transcript, outDir } = fixture();
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(
+      path.join(outDir, 'labels.json'),
+      JSON.stringify({ [SID.slice(0, 8)]: 'Setup 1/1: labelled' }),
+    );
+    const { base } = archive({ transcript, outDir });
+
+    const index = readFileSync(path.join(outDir, 'README.md'), 'utf8');
+    assert.match(index, new RegExp(`\\[Setup 1/1: labelled\\]\\(${base}\\.md\\)`));
+    assert.ok(!index.includes('[Test session]'));
+  });
+
   it('is idempotent when re-run on the same transcript', () => {
     const { transcript, outDir } = fixture();
     archive({ transcript, outDir });

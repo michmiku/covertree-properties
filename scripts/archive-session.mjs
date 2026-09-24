@@ -12,7 +12,8 @@
  *   <out>/raw/<date>-<id>.jsonl            main transcript
  *   <out>/raw/<date>-<id>.<agentId>.jsonl  one per subagent
  *   <out>/<date>-<id>.md                   readable rendering
- *   <out>/README.md                        regenerated index
+ *   <out>/README.md                        regenerated index; titles from <out>/labels.json
+ *                                          ({ "<first 8 chars of id>": "label" }) win
  * Fails closed: content is checked for leaks before anything is written, so a transcript that
  * still looks sensitive after redaction is never archived (exit 1, leak kinds in .archive.log).
  */
@@ -115,6 +116,8 @@ export function archive({ transcript, sessionId, outDir, secrets = [], scrubWith
 const SESSION_MD = /^(\d{4}-\d{2}-\d{2})-([0-9a-f-]{36})\.md$/;
 
 export function renderIndex(outDir) {
+  const labelsFile = path.join(outDir, 'labels.json');
+  const labels = existsSync(labelsFile) ? JSON.parse(readFileSync(labelsFile, 'utf8')) : {};
   const rows = readdirSync(outDir)
     .map((f) => ({ f, m: f.match(SESSION_MD) }))
     .filter(({ m }) => m)
@@ -126,7 +129,7 @@ export function renderIndex(outDir) {
         f,
         date: m[1],
         id: m[2],
-        title: md.match(/^# (.+)$/m)?.[1] ?? '',
+        title: labels[m[2].slice(0, 8)] ?? md.match(/^# (.+)$/m)?.[1] ?? '',
         started: field('Started'),
         prompts: field('Prompts'),
         tools: field('Tool calls'),

@@ -43,13 +43,16 @@ Work in this order. Each step compiles against the previous one.
 4. **Service:** business rules, validation (Zod for what SDL can't express), and orchestration.
    It takes its dependencies (repository, Weatherstack client) as arguments or from context, so
    tests can swap them.
-5. **Resolver:** thin. Map args → service call → result, and map domain errors to `GraphQLError`
-   with the SPEC's error codes (`WEATHER_UNAVAILABLE`, `NOT_FOUND`, validation).
+5. **Resolver:** thin. Map args → service call → result. Mutations return the SPEC's result
+   unions (`CreatePropertyResult`, `DeletePropertyResult`): map domain results to union members
+   and resolve `__typename`; never throw expected failures. Only invalid query arguments use
+   `GraphQLError` with `BAD_USER_INPUT`.
 6. **API tests** (Vitest):
-   - one test per criterion, named with its ID: `it('S5.4 does not persist when Weatherstack returns success:false')`
+   - one test per criterion, named with its ID: `it('S5.5 returns UPSTREAM_ERROR and does not persist when Weatherstack returns success:false')`
    - service unit tests with a fake repository/client for logic and error branches
    - one integration test through Yoga (`yoga.fetch`) against `postgres-test` for the happy path
-   - Weatherstack via MSW handlers: success, `success:false`, 500, timeout, malformed body
+   - Weatherstack via MSW handlers: success, network error, timeout, 500, `success:false`,
+     malformed body, non-US country (one per `WeatherFailureReason`)
 
 ## 3. Web
 
@@ -59,7 +62,7 @@ Work in this order. Each step compiles against the previous one.
 2. **UI:** a route or component with shadcn/ui primitives. Handle all three states: loading,
    error, and empty. Use `refetchQueries` after mutations rather than manual cache writes.
 3. **Web tests:** Vitest + Testing Library with MSW `graphql.query/mutation` handlers. Cover the
-   criterion's user-visible behavior (e.g. S3.5 "no matches" + clear filters).
+   criterion's user-visible behavior (e.g. S3.10 "no matches" + clear filters).
 
 ## 4. Prove it
 
@@ -74,8 +77,10 @@ Work in this order. Each step compiles against the previous one.
 
 ## Pitfalls seen in this stack
 
-- Forgetting `mode: 'insensitive'` on the city filter (S3.2).
+- Forgetting `mode: 'insensitive'` on the city `contains` filter (S3.2), or letting `%`/`_` act
+  as wildcards (S3.3).
 - Treating HTTP 200 from Weatherstack as success; check `success === false` in the body.
-- Validating input _after_ calling Weatherstack (S5.3 requires before), which wastes quota.
+- Validating input or checking duplicates _after_ calling Weatherstack (S5.3/S5.4 require
+  before), which wastes quota.
 - `lat`/`lon` stored as strings; parse them to numbers.
 - The resolver importing the Weatherstack client "just this once" is a lint error by design.

@@ -23,7 +23,7 @@ pnpm 12: there is no `pnpm -s`; use `pnpm run <script>` / `pnpm exec <bin>`.
   users. ESLint `no-restricted-imports` enforces this. Fix the design, don't disable the rule.
 - **Weatherstack** is called only from the create-property service. The client is built once and
   injected through the Yoga context, never imported by resolvers. Parse its response with Zod:
-  HTTP 200 can still be `{ success: false }`, and `lat`/`lon` are strings (SPEC S5.4).
+  HTTP 200 can still be `{ success: false }`, and `lat`/`lon` are strings (SPEC S5.5).
 - **Schema is the contract:** edit `apps/api/src/schema.graphql` first. Never hand-edit generated
   files (`__generated__/`, `src/gql/`) or duplicate generated types.
 - **Validation:** GraphQL types/enums first (`USState`); Zod only for what SDL can't express
@@ -35,7 +35,7 @@ pnpm 12: there is no `pnpm -s`; use `pnpm run <script>` / `pnpm exec <bin>`.
   `WEATHERSTACK_ACCESS_KEY`; e2e points `WEATHERSTACK_BASE_URL` at a local stub. A test that needs
   the network is a bug.
 - Integration tests use `TEST_DATABASE_URL` (postgres-test), never the dev database.
-- Name tests after SPEC criteria (`it('S3.2 matches city case-insensitively')`). The reviewer
+- Name tests after SPEC criteria (`it('S3.2 matches city as a case-insensitive substring')`). The reviewer
   agent looks for them.
 
 ## Working here

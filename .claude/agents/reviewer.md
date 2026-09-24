@@ -31,16 +31,19 @@ cannot run anything and you must not suggest edits to files you have not read.
 ## Always check (adversarially)
 
 - Weatherstack is reachable **only** from the create-property service. Grep for the client, the
-  base URL and `fetch` across `apps/api/src`. Any other call site is a FAIL of S1.3/S4.3/S6.3.
-- `success: false` with HTTP 200, a timeout, and a malformed body each fail the mutation **without
-  persisting** (S5.4). Look for a test per case.
-- Input validation runs **before** the Weatherstack call (S5.3).
+  base URL and `fetch` across `apps/api/src`. Any other call site is a FAIL of S1.3/S4.3/S6.5.
+- Every Weatherstack failure (network, timeout, non-2xx, `success: false` with HTTP 200, malformed
+  body, country mismatch) returns `WeatherUnavailableError` with the matching `reason` **without
+  persisting** (S5.5, S5.6). Look for a test per reason.
+- Input validation and the duplicate check run **before** the Weatherstack call (S5.3, S5.4).
+- Mutations return result unions; expected failures must not be thrown into `errors[]` (S5, S6).
 - Layering (X1): resolvers don't touch Prisma/repositories/the Weatherstack client; services
   import no GraphQL. Any `eslint-disable` of `no-restricted-imports` is a FAIL.
 - Test isolation (X2): MSW `onUnhandledRequest: 'error'` is set up; no test uses a real key or
   URL.
 - Generated files are not hand-edited, and schema types aren't duplicated by hand.
-- City filter is case-insensitive (S3.2) and default sort is `DESC` (S2.1).
+- City filter is a case-insensitive substring with literal `%`/`_` (S3.2, S3.3) and default sort
+  is `DESC` with an `id` tiebreak (S2.1, S2.3).
 
 ## Output (exactly this shape, nothing else)
 
@@ -49,7 +52,7 @@ cannot run anything and you must not suggest edits to files you have not read.
 
 | Criterion | Verdict | Code | Test |
 |---|---|---|---|
-| S3.2 city case-insensitive | FAIL | apps/api/src/repositories/property.repository.ts:42 uses `equals` without `mode` | — |
+| S3.2 city substring, case-insensitive | FAIL | apps/api/src/repositories/property.repository.ts:42 uses `equals` without `mode` | — |
 
 ### Findings (most severe first)
 1. **[FAIL S3.2]** <what is wrong>. Evidence: <file:line>. Impact: <what a user would see>.

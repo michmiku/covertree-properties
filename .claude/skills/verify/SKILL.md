@@ -61,7 +61,7 @@ Use exactly this shape:
 |---|---|---|
 | database | ✅ | postgres, postgres-test healthy |
 | format · lint · typecheck | ✅ | |
-| test | ❌ | 2 failing: S5.4 timeout case (apps/api/test/…:88) |
+| test | ❌ | 2 failing: S5.5 timeout case (apps/api/test/…:88) |
 | build · e2e | ⏭ skipped | gate stopped at test |
 | UI smoke | ⏭ / ✅ / ❌ | console errors, screenshots |
 

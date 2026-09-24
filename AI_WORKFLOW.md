@@ -19,6 +19,17 @@ model must _know_. Rules that can be enforced are enforced; CLAUDE.md explains w
 | `skill-creator` plugin              | project plugin                                        | drafted the custom skills and their `evals/evals.json`                                              |
 | `frontend-design` plugin            | project plugin                                        | UI direction for `apps/web`                                                                         |
 
+### Clean profile
+
+The sessions ran from a separate Claude Code config directory, `~/.claude-assessment`, instead
+of the author's everyday profile, so its settings, memory and plans (and the transcripts the
+archiver reads) are kept apart from other work. Its settings sync no skills from claude.ai
+(`syncClaudeAiSkills: false`), and the project `.claude/settings.json` turns claude.ai connectors
+off (`disableClaudeAiConnectors: true`). The project's own tooling is in this repo (`.claude/`,
+`.mcp.json`) and in the table above. The five short setup sessions in the
+[index](ai/sessions/README.md) show the setup, including a root-owned project directory that had
+to be fixed first. Setup 1 ran on `claude-opus-4-8`; every later session used Opus 5.5.
+
 ## Harness
 
 ### CLAUDE.md, what the model must know
@@ -76,7 +87,29 @@ the harness was agreed.
 - **Rendered:** user prompts (including feedback given when rejecting a plan, and answers to questions), assistant replies, tool calls with inputs, and tool outputs truncated to 40 lines / 4 KB. System reminders and metadata are stripped.
 - **Redacted in both files:** the exact values of secret-named `.env` variables (plain, URL-encoded and JSON-escaped), emails, `access_key=`/`%3D` query params, `*KEY/SECRET/TOKEN/PASSWORD` values written as `=`, `:`, quoted, JSON (escaped at any depth) or YAML, camelCase `accessKey`-style fields, bearer tokens, API keys, connection-string credentials, account/organization IDs, and absolute home paths.
 - **Fails closed:** everything is scanned in memory before anything is written. On any match nothing is archived; the leak kind (never an `.env` value) is logged to `ai/sessions/.archive.log`.
+- **Labels:** `ai/sessions/labels.json` maps a short session id to an index title (used for the five setup sessions, whose generated titles were shell commands). The hook regenerates the index, so labels live there, not in `README.md`.
 - **Tests:** `scripts/__tests__/archive-session.test.mjs` (`pnpm run test:scripts`).
+
+## Token usage
+
+Summed from the archived raw transcripts (main + subagents), one count per API message.
+"Input" is uncached input. Cache reads are billed at a fraction of the input price, which is why
+they dominate the counts without dominating cost. This session and any session not yet archived
+are not included.
+
+| Session    | Work                        | Models                            | Transcripts |      Input |   Cache write |      Cache read |      Output |
+| ---------- | --------------------------- | --------------------------------- | ----------: | ---------: | ------------: | --------------: | ----------: |
+| `206f30da` | Setup 1/5                   | claude-opus-4-8                   |           1 |     14,965 |         2,339 |          16,593 |         599 |
+| `931c2f0b` | Setup 2/5                   | claude-opus-5-5                   |           1 |          4 |        44,642 |          88,330 |         956 |
+| `61e23043` | Setup 3/5                   | claude-opus-5-5                   |           1 |          6 |        25,215 |          73,759 |       1,042 |
+| `bb00a467` | Setup 4/5                   | claude-opus-5-5                   |           1 |          6 |         4,202 |          60,352 |         732 |
+| `33a4f9b7` | Setup 5/5                   | claude-opus-5-5                   |           1 |         42 |        13,550 |         513,858 |       3,664 |
+| `efe8f907` | Harness                     | claude-opus-5-5, claude-haiku-4-5 |           3 |        250 |       289,840 |      13,619,260 |     104,391 |
+| `9a6944a8` | S5, API/web scaffold        | claude-opus-5-5                   |           4 |        552 |       566,129 |      54,252,352 |     231,789 |
+| `70daf4c1` | S4, S6, X4, README          | claude-opus-5-5                   |           2 |        308 |       326,750 |      26,005,134 |     112,493 |
+| `63f02b26` | Delivery review, PR #1      | claude-opus-5-5                   |           8 |        550 |       969,580 |      34,135,227 |     143,693 |
+| `52e4e615` | Workflow notes, transcripts | claude-opus-5-5                   |           1 |         70 |        48,672 |       2,053,548 |      16,399 |
+| **Total**  |                             |                                   |             | **16,753** | **2,290,919** | **130,818,413** | **615,758** |
 
 ## Session log
 
@@ -111,6 +144,37 @@ Session: [`efe8f907`](ai/sessions/2026-09-23-efe8f907-6c80-4a38-965a-0d59fdfddf3
 - "Is a custom skill better as a CLAUDE.md rule or maybe a hook?" — led to the design rule at the top of this file.
 
 **Harness changes:** Everything listed above in Harness was created this session.
+
+### 2026-09-24 · SPEC decisions, API/web scaffold, S5 create, S1–S3 list, sort, filter
+
+Session: [`9a6944a8`](ai/sessions/2026-09-24-9a6944a8-8343-4087-bfe9-7653041fe6fe.md) · Stories: S1, S2, S3, S5, S7, X1, X2
+
+**Goal:** Turn the brief into a SPEC with testable criteria ("If there is something ambiguous, ask me instead of assuming stuff"), design the SDL and Prisma schema, write the ADRs, scaffold, then build stories one at a time with `/graphql-slice`.
+
+**What the AI did:**
+
+- Rewrote `docs/SPEC.md` through several rounds of AskUserQuestion. Decisions include result unions, six `WeatherFailureReason` values, 56 `USState` values, and rejecting duplicates before the Weatherstack call. It renumbered criteria and updated the IDs cited in CLAUDE.md, the reviewer, both skills and the evals.
+- Wrote `schema.graphql` and `schema.prisma` and showed them before generating anything. Scaffolded `apps/api`: Prisma 7 with a `pg_trgm` GIN index for the city filter, Yoga, codegen, Vitest unit/integration projects, and MSW set to `onUnhandledRequest: 'error'`. Wrote ADRs 0002–0004.
+- S5: added the Weatherstack client (Zod, 5 s timeout, key redaction) and a `weatherstack:probe` script. The user ran two real calls with it, and the result became a recorded fixture. Also built the repository, service, resolvers and 49 API tests, then scaffolded `apps/web` (React Router, Apollo Client 4, Tailwind v4, shadcn) with the S5.8 form and the e2e Weatherstack stub.
+- S1+S2 (list, sort) and S3 (filters, `escapeLike`), each followed by a reviewer run, `pnpm verify` and a Playwright MCP smoke test. 9 commits, `1cee481` to `d768be5`; API tests went from 2 to 100, web tests from 7 to 19.
+
+**Corrections & surprises:**
+
+- The user's SDL request conflicted with the SPEC (a JSON scalar for weather, `sort` instead of `orderBy`). The AI asked, and the user kept the SPEC. The AI pointed out that a plain `city` index can't serve `ILIKE '%…%'`; the user chose a trigram index.
+- The AI's S5.6 per-territory country table was "a wrong guess": the real probes returned `USA United States of America` for both AZ and PR. As written, the table would have rejected every property. It became one US list.
+- Prisma's AI-agent guard blocked `migrate reset --force`. The user chose `migrate deploy` + TRUNCATE for integration tests.
+- Toolchain friction: npm's `latest` tag for Prisma is an 8.0 RC, so it was pinned to 7.10. The web `postinstall` codegen ran before `codegen.ts` existed. Codegen 6 renamed `enumsAsConst`. graphql 16 and 17 were both installed, so a thrown `GraphQLError` was masked to `INTERNAL_SERVER_ERROR`; the fix is `createGraphQLError`, now a pitfall in `graphql-slice`.
+- The reviewer's first S5 pass was NOT DONE (30 PASS / 3 UNTESTED / 1 FAIL). The main risk it found: a fractional `humidity` would be stored and then break every read. After fixes it was 33 PASS, leaving only the S5.8 list refresh, which S1's `cache-and-network` closed. S1/S2 and S3 passed with minor findings, and all but one were fixed; the X4 filter step was left for X4.
+- The browser smoke test found a real layout bug (the State label shifted when the zip error appeared) and a missing favicon. Temporarily breaking the code confirmed the tests catch the change: removing `%`/`_` escaping failed 4 tests, and removing `mode: 'insensitive'` failed 6.
+- Only one hook catch appears in the transcript: the lint hook rejected an `any` in a test helper.
+
+**Prompts worth noting:**
+
+- "Show them to me before you generate anything else" — this checkpoint surfaced the JSON-scalar, `sort` and index conflicts before any code depended on them.
+- "The choices you make without asking are also fine" — accepted the defaults the AI had listed as made without asking, which ended the question rounds.
+- "use the trigram index, then scaffold apps/api" — the user's answer to the flagged index problem.
+
+**Harness changes:** CLAUDE.md criterion IDs and test-name example; reviewer criteria per failure reason; `graphql-slice` now returns unions instead of throwing, plus the Prisma 7 scaffold notes (`migrate deploy` + TRUNCATE, no `migrate reset`) and the graphql 17 error-masking pitfall; the ESLint `fetch` ban widened to all of `apps/api/src` except the Weatherstack client.
 
 ### 2026-09-24 · S4 details, S6 delete, X4 e2e, README, URL state and toasts
 
